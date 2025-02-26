@@ -103,3 +103,50 @@ def bytes_to_str(bytes: int) -> str:
         repr = f"{bytes:d}B"
     
     return repr
+
+
+def time_to_str(time: float, abbrev: bool = False) -> str:
+    """Returns a time in seconds in a human readable format.
+    
+    Args:
+        time (float): Time in seconds.
+        abbrev (bool): If `True`, abbreviations to represent different time
+            units are used.
+    
+    Returns:
+        (str): `str` representation of `time`.
+    """
+    if abbrev:
+        ms_repr = "ms"
+        s_repr = "s"
+        m_repr = "m"
+        h_repr = "h"
+    
+    else:
+        ms_repr = "millisecond(s)"
+        s_repr = "second(s)"
+        m_repr = "minute(s)"
+        h_repr = "hour(s)"
+
+    if time < 1.0:
+        time_repr = f"{time * 1e3:.1f} {ms_repr}"
+
+    elif time < 60.0:
+        time_repr = f"{time:.1f} {s_repr}"
+    
+    elif time < 3600.0:
+        time_mins = time // 60.0
+        time_secs = time % 60
+        time_repr = f"{int(time_mins)} {m_repr} {int(time_secs)} {s_repr}" 
+
+    else:            
+        time_hours = time // 3600.0
+        remaining_time = time % 3600.0
+        time_mins = remaining_time // 60.0
+        time_secs = remaining_time % 60
+        time_repr = (
+            f"{int(time_hours)} {h_repr} {int(time_mins)} {m_repr} "
+            f"{int(time_secs)} {s_repr}"
+        )
+
+    return time_repr

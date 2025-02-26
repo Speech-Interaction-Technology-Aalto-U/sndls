@@ -1,6 +1,8 @@
 import os
 import csv
 import random
+import shutil
+import numpy as np
 import polars as pl
 from copy import deepcopy
 from time import perf_counter
@@ -8,11 +10,13 @@ from decimal import Decimal
 from numbers import Number
 from argparse import Namespace
 from tqdm import tqdm
+from typing import List
 from ..utils.config import (
     get_allowed_audio_file_extensions,
     get_sppbar_color
 )
 from ..utils.io import (
+    ask_confirmation,
     get_dir_files,
     read_audio,
     read_audio_metadata
@@ -24,7 +28,8 @@ from ..utils.fmt import (
     exit_warning,
     printc as print,
     print_error,
-    print_warning
+    print_warning,
+    time_to_str
 )
 from ..utils.guards import is_file_with_ext
 from ..utils.hash import generate_sha256_from_file
@@ -267,6 +272,327 @@ def _audio_file_repr_from_dict(
         repr = f"<error>{repr}</error>"
 
     return repr
+
+
+def _create_dir_if_missing(dir: str) -> None:
+    """Creates a folder if it does not exist.
+    
+    Args:
+        dir (str): Folder to be created.
+    """
+    if not os.path.isdir(dir):
+        print(f"Creating post action output folder '{dir}'")
+
+        try:
+            os.makedirs(dir)
+        
+        except Exception as e:
+            exit_error(f"An unexpected error ocurred: {e}")
+
+
+def _perform_post_action(files: List[str], args: Namespace) -> None:
+    """Perform post actions such as copying, moving or deleting files that
+    match a certain filter.
+    
+    Args:
+        files (List[str]): List of targeted files.
+        args (Namespace): Main namespace containing user provided input.
+        cli (CommandLineInterface): CLI instance.
+    """
+    if args.post_action == "cp":
+        output = args.post_action_output
+        print(f"\n{len(files)} file(s) will be copied to '{output}'")
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        _create_dir_if_missing(args.post_action_output)
+
+        copied_files = 0
+
+        # Copy files and warn user if a file already exists
+        for f in tqdm(
+            files,
+            desc="Copying files",
+            leave=False,
+            unit="file",
+            colour=get_sppbar_color()
+        ):
+            try:
+                if args.recursive and args.post_action_preserve_subfolders:
+                    # Get relative path
+                    dst = f.replace(args.input, "", 1)
+                    dst = dst.split(os.sep)  # Avoid double-slashes xplatform
+                    dst = os.path.join(args.post_action_output, *dst)
+
+                    # Create subfolders if structure does not exist yet
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                
+                else:
+                    dst = os.path.join(output, os.path.basename(f))
+
+                if os.path.exists(dst):
+                    print_warning(
+                        f"File '{dst}' already exists",
+                        writer=tqdm
+                    )
+                    continue
+
+                else:
+                    shutil.copy(f, dst)
+                    copied_files += 1
+            
+            except Exception as e:
+                print_warning(
+                    f"An error ocurred while copying '{f}' to '{dst}': {e}",
+                    writer=tqdm
+                )
+            
+        print_fn = (print_warning if copied_files != len(files) else print)
+        print_fn(f"{copied_files}/{len(files)} file(s) copied to '{output}'")
+    
+    elif args.post_action == "mv":
+        output = args.post_action_output
+        print(f"\n{len(files)} file(s) will be moved to '{output}'")
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        _create_dir_if_missing(args.post_action_output)
+    
+        # Move files and warn user if a file already exists
+        moved_files = 0
+
+        # Move audio files and warn user if a file already exists
+        for f in tqdm(
+            files,
+            desc="Moving audio files",
+            leave=False,
+            unit="file",
+            colour=get_sppbar_color()
+        ):
+            try:
+                if args.recursive and args.post_action_preserve_subfolders:
+                    # Get relative path
+                    dst = f.replace(args.input, "", 1)
+                    dst = dst.split(os.sep)  # Avoid double-slashes xplatform
+                    dst = os.path.join(args.post_action_output, *dst)
+
+                    # Create subfolders if structure does not exist yet
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                
+                else:
+                    dst = os.path.join(output, os.path.basename(f))
+
+                if os.path.exists(dst):
+                    print_warning(f"File '{dst}' already exists", writer=tqdm)
+                    continue
+                    
+                else:
+                    shutil.move(f, dst)
+                    moved_files += 1
+            
+            except Exception as e:
+                print_warning(
+                    f"An error ocurred while moving '{f}' to '{dst}': {e}",
+                    writer=tqdm
+                )
+            
+        print_fn = (print_warning if moved_files != len(files) else print)
+        print_fn(f"{moved_files}/{len(files)} file(s) moved to '{output}'")
+    
+    elif args.post_action == "rm":
+        print(
+            f"\n{len(files)} file(s) will be deleted. This action cannot be "
+            "undone"
+        )
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        # Delete files
+        for f in tqdm(
+            files,
+            desc="Deleting files",
+            leave=False,
+            unit="file",
+            colour=get_sppbar_color()
+        ):
+            try:
+                os.remove(f)
+            
+            except Exception as e:
+                print_warning(
+                    f"An error ocurred while deleting '{f}': {e}",
+                    writer=tqdm
+                )
+    
+    elif args.post_action == "cp+sp":
+        # Check splits are possible without 0 files in any of them
+        if len(files) < args.post_action_num_splits:
+            exit_error(
+                "The number of requested splits "
+                f"({args.post_action_num_splits}) is bigger than the number of"
+                f" file(s) ({len(files)})"
+            )
+
+        print(
+            f"\n{len(files)} file(s) will be copied and split into "
+            f"{args.post_action_num_splits} partition(s)"
+        )
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        _create_dir_if_missing(args.post_action_output)
+
+        # Shuffle files and create splits specs
+        random.seed(args.random_seed)
+        random.shuffle(files)
+        splits = np.array_split(files, args.post_action_num_splits)
+        split_dirname_zfill = len(str(args.post_action_num_splits - 1))
+        copied_files = 0
+
+        for split_idx, split_data in enumerate(splits):
+            split_files = split_data.tolist()
+            split_dir = os.path.join(
+                args.post_action_output,
+                f"{args.post_action_split_dirname}"
+                f"{str(split_idx).zfill(split_dirname_zfill)}"
+            )
+            _create_dir_if_missing(split_dir)
+
+            # Copy files and warn user if a file already exists
+            for f in tqdm(
+                split_files,
+                desc=(
+                    f"Copying files of partition {split_idx + 1}/"
+                    f"{args.post_action_num_splits}"
+                ),
+                leave=False,
+                unit="file",
+                colour=get_sppbar_color()
+            ):
+                try:
+                    if args.recursive and args.post_action_preserve_subfolders:
+                        # Get relative path
+                        dst = f.replace(args.input, "", 1)
+                        dst = dst.split(os.sep)  # Avoid double-slashes
+                        dst = os.path.join(split_dir, *dst)
+
+                        # Create subfolders if structure does not exist yet
+                        os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    
+                    else:
+                        dst = os.path.join(split_dir, os.path.basename(f))
+                    
+                    if os.path.exists(dst):
+                        print_warning(
+                            f"File '{dst}' already exists",
+                            writer=tqdm
+                        )
+                        continue
+
+                    else:
+                        shutil.copy(f, dst)
+                        copied_files += 1
+                
+                except Exception as e:
+                    print_warning(
+                        f"An error ocurred while copying '{f}' to '{dst}': {e}",
+                        writer=tqdm
+                    )
+
+        print_fn = (print_warning if copied_files != len(files) else print)
+        print_fn(
+           f"{copied_files}/{len(files)} file(s) copied to "
+           f"'{args.post_action_output}'"
+        )
+    
+    elif args.post_action == "mv+sp":
+        # Check splits are possible without 0 files in any of them
+        if len(files) < args.post_action_num_splits:
+            exit_error(
+                "The number of requested splits "
+                f"({args.post_action_num_splits}) is bigger than the number of"
+                f" file(s) ({len(files)})"
+            )
+
+        print(
+            f"\n{len(files)} file(s) will be moved and split into "
+            f"{args.post_action_num_splits} partition(s)"
+        )
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        _create_dir_if_missing(args.post_action_output)
+
+        # Create splits specs
+        random.seed(args.random_seed)
+        random.shuffle(files)
+        splits = np.array_split(files, args.post_action_num_splits)
+        split_dirname_zfill = len(str(args.post_action_num_splits - 1))
+        moved_files = 0
+
+        for split_idx, split_data in enumerate(splits):
+            split_files = split_data.tolist()
+            split_dir = os.path.join(
+                args.post_action_output,
+                f"{args.post_action_split_dirname}"
+                f"{str(split_idx).zfill(split_dirname_zfill)}"
+            )
+            _create_dir_if_missing(split_dir)
+
+            # Copy files and warn user if a file already exists
+            for f in tqdm(
+                split_files,
+                desc=(
+                    f"Moving files of partition {split_idx + 1}/"
+                    f"{args.post_action_num_splits}"
+                ),
+                leave=False,
+                unit="file",
+                colour=get_sppbar_color()
+            ):
+                try:
+                    if args.recursive and args.post_action_preserve_subfolders:
+                        # Get relative path
+                        dst = f.replace(args.input, "", 1)
+                        dst = dst.split(os.sep)  # Avoid double-slashes
+                        dst = os.path.join(split_dir, *dst)
+
+                        # Create subfolders if structure does not exist yet
+                        os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    
+                    else:
+                        dst = os.path.join(split_dir, os.path.basename(f))
+                    
+                    if os.path.exists(dst):
+                        print_warning(
+                            f"File '{dst}' already exists",
+                            writer=tqdm
+                        )
+                        continue
+
+                    else:
+                        shutil.move(f, dst)
+                        moved_files += 1
+                
+                except Exception as e:
+                    print_warning(
+                        f"An error ocurred while moving '{f}' to '{dst}': {e}",
+                        writer=tqdm
+                    )
+
+        print_fn = (print_warning if moved_files != len(files) else print)
+        print_fn(
+           f"{moved_files}/{len(files)} file(s) moved to "
+           f"'{args.post_action_output}'"
+        )
+
+    else:
+        raise AssertionError
 
 
 def lsa(args: Namespace) -> None:
@@ -739,4 +1065,80 @@ def lsa(args: Namespace) -> None:
         print("Sample rate(s):".ljust(22) +  f"{fs_repr}")
     
     # Data dependant summary lines
-    ...
+    if not args.meta:
+        skipped_files_repr = (
+            "Skipped files:".ljust(22) + str(glob_stats["skipped_files"])
+        )
+
+        if glob_stats["skipped_files"] > 0:
+            print_error(skipped_files_repr)
+        
+        else:
+            print(skipped_files_repr)
+
+        clipped_files_repr = (
+            "Clipped files:".ljust(22) + str(glob_stats["clipped_files"])
+        )
+
+        if glob_stats["clipped_files"] > 0:
+            print_error(clipped_files_repr)
+
+        else:
+            print(clipped_files_repr)
+
+        anomalous_files_repr = (
+            "Anomalous files:".ljust(22) + str(glob_stats["anomalous_files"])
+        )
+
+        if glob_stats["anomalous_files"] > 0:
+            print_error(anomalous_files_repr)
+        
+        else:
+            print(anomalous_files_repr)
+
+        silent_files_repr = (
+            "Silent files:".ljust(22) + str(glob_stats["silent_files"])
+        )
+
+        if glob_stats["silent_files"] > 0:
+            print_error(silent_files_repr)
+        
+        else:
+            print(silent_files_repr)
+
+    print(
+        "Total duration:".ljust(22)
+        + time_to_str(glob_stats['total_duration']),
+    )
+
+    # NOTE: Total files are recalculated because some files may have been
+    # filtered from len(files)
+    total_files = (
+        glob_stats["mono_files"]
+        + glob_stats["stereo_files"]
+        + glob_stats["multichannel_files"]
+    )
+
+    if total_files > 1:
+        print(
+            "Minimum duration:".ljust(22)
+            + time_to_str(glob_stats['min_duration'])
+        )
+        print(
+            "Maximum duration:".ljust(22)
+            + time_to_str(glob_stats['max_duration'])
+        )
+        print(
+            "Average duration:".ljust(22)
+            + time_to_str(glob_stats['total_duration'] / total_files)
+        )
+
+    print(
+        "Total size:".ljust(22) + bytes_to_str(glob_stats['total_size_bytes']),
+    )
+    print("")
+    print(f"Elapsed time: {time_to_str(elapsed_time, abbrev=True)}")
+
+    # Perform --post-action if any
+    if args.post_action:
+        _perform_post_action(post_action_files, args)
