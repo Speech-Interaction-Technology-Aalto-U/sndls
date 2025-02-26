@@ -1,1 +1,1 @@
-# `lsa` a simple tool to inspect audio files
+# `lsa`: An audio-friendly `ls`, with a little something extra

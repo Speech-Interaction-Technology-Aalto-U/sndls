@@ -69,7 +69,6 @@ class __Config__(metaclass=__Singleton__):
             ".aif",
             ".aiff"
         )
-        self._DEFAULT_RANDOM_SEED = 1234
 
 
 def _get_text_color_tags() -> dict:
