@@ -102,7 +102,7 @@ def _get_text_decorator_tags() -> dict:
     return __Config__()._TEXT_DECORATOR_TAGS
 
 
-def _get_sppbar_color() -> str:
+def get_sppbar_color() -> str:
     """Returns the default single process progress bar color.
     
     Returns:
