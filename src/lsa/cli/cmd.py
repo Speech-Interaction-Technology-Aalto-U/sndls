@@ -2,7 +2,10 @@ import os
 import csv
 import random
 import polars as pl
+from copy import deepcopy
 from time import perf_counter
+from decimal import Decimal
+from numbers import Number
 from argparse import Namespace
 from tqdm import tqdm
 from ..utils.config import (
@@ -16,8 +19,10 @@ from ..utils.io import (
 )
 from ..utils.collections import flatten_nested_list
 from ..utils.fmt import (
+    bytes_to_str,
     exit_error,
-    exit_warning
+    exit_warning,
+    printc as print
 )
 from ..utils.guards import is_file_with_ext
 from ..utils.hash import generate_sha256_from_file
@@ -28,6 +33,47 @@ from ..utils.audio import (
     peak_db,
     rms_db
 )
+
+
+def _matches_filter(
+        data: dict,
+        preload: pl.DataFrame,
+        expr: str
+) -> bool:
+    """Matches a filter expression against a set of file specifications.
+    
+    Args:
+        data (dict): Audio file specifications.
+        preload (pl.DataFrame): Preloaded data.
+        expr (str): Filter expression.
+    
+    Returns:
+        bool: `True` of the filter matches the contents of `data`, `False`
+            otherwise.
+    """
+    try:
+        # Set constrained globals and locals
+        if preload is not None:
+            data["preload"] = preload
+
+        result = eval(expr, {}, deepcopy(data))
+
+        if not isinstance(result, bool):
+            raise ValueError("Invalid return type")
+    
+    except Exception as e:
+        fields_repr = ", ".join(k for k in data)
+
+        exit_error(
+            f"Invalid --filter/--select expression '{expr}': {e}.\n"
+            "Only python expressions returning a bool value are valid. To "
+            "create a filter expression you can access any of the following "
+            f"fields of each file: {fields_repr}. "
+            "Please look at the repository README.md for further details",
+            writer=tqdm
+        )
+    
+    return result
 
 
 def _preload_file(
@@ -76,6 +122,149 @@ def _preload_file(
         )
     
     return preload
+
+
+def _audio_file_meta_repr_from_dict(data: dict, max_fname_chars: int) -> str:
+    """Creates a printable string representation of a set of audio file
+    specifications.
+
+    !!! note
+        Differently from `_audio_file_repr_from_dict`, the specifications
+        in `data` of this method contain exclusively metadata information.
+    
+    Args:
+        data (dict): Audio data.
+        max_fname_chars (int): Maximum name of characters from the file path
+            to be printed to the terminal.
+        
+    Returns:
+        str: `str` representation of the audio file specifications.
+    """
+    # Get filename repr
+    filename_repr = (
+        f"...{data['file'][-max_fname_chars:]}"
+        if len(data["file"]) > max_fname_chars + 3 else data["file"]
+    ).ljust(max_fname_chars + 3)
+
+    # Get length repr
+    num_samples_repr = str(data["num_samples_per_channel"])
+
+    if len(num_samples_repr) > 10:
+        f"{Decimal(num_samples_repr):.5e}"
+    
+    if data["is_invalid"]:
+        len_repr = "-".rjust(20)
+
+    else:
+        len_repr = (
+            num_samples_repr
+            + "x" + str(data["num_channels"])
+            + "@" + str(data["fs"]) + "hz"
+        ).rjust(20)
+
+    # Get mem repr
+    mem_repr = bytes_to_str(data["size_bytes"]).rjust(7)
+
+    # Get format repr
+    data_fmt = "-" if data["fmt"] is None else data["fmt"]
+    data_subtype = "-" if data["subtype"] is None else data["subtype"]
+
+    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(8)
+
+    # Assemble representation
+    repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr}"
+
+    if data["is_invalid"]:
+        repr = f"<error>{repr}</error>"
+
+    return repr
+
+
+def _audio_file_repr_from_dict(
+        data: dict,
+        max_fname_chars: int,
+        abbrev_hash: bool
+) -> str:
+    """Creates a printable string representation of a set of audio file
+    specifications.
+    
+    !!! note
+        Differently from `_audio_file_meta_repr_from_dict`, the specifications
+        in `data` contain metadata information and audio based statistics.
+    
+    Args:
+        data (dict): Audio data.
+        max_fname_chars (int): Maximum name of characters from the file path
+            to be printed to the terminal.
+        
+    Returns:
+        str: `str` representation of the audio file specifications.
+    """
+    # Get filename repr
+    filename_repr = (
+        f"...{data['file'][-max_fname_chars:]}"
+        if len(data["file"
+                    ]) > max_fname_chars + 3 else data["file"]
+    ).ljust(max_fname_chars + 3)
+
+    # Get length repr
+    num_samples_repr = str(data["num_samples_per_channel"])
+
+    if len(num_samples_repr) > 10:
+        f"{Decimal(num_samples_repr):.5e}"
+    
+    if data["is_invalid"]:
+        len_repr = "-".rjust(20)
+    
+    else:
+        len_repr = (
+            num_samples_repr
+            + "x" + str(data["num_channels"])
+            + "@" + str(data["fs"]) + "hz"
+        ).rjust(20)
+
+    # Get mem repr
+    mem_repr = bytes_to_str(data["size_bytes"]).rjust(7)
+
+    # Get format repr
+    data_fmt = "-" if data["fmt"] is None else data["fmt"]
+    data_subtype = "-" if data["subtype"] is None else data["subtype"]
+
+    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(8)
+
+    # Audio stats repr
+    if data["is_invalid"]:
+        db_repr = "- dBrms".rjust(16) + " " + "- dBpeak".rjust(16)
+    
+    else:
+        db_repr = " ".join(
+            [
+                f"{r:.1f}dBrms:{idx}".rjust(16)
+                + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                for idx, (r, p)
+                in enumerate(zip(data["rms_db"], data["peak_db"]))
+            ]
+        )
+
+    # Assemble representation
+    repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr} {db_repr}"
+
+    if "sha256" in data:
+        sha256 = data["sha256"][-8:] if abbrev_hash else data["sha256"]
+        repr = (
+            f"{filename_repr}  {sha256} {mem_repr} {fmt_repr} {len_repr} "
+            f"{db_repr}"
+        )
+
+    if (
+        data["is_clipped"]
+        or data["is_anomalous"]
+        or data["is_silent"]
+        or data["is_invalid"]
+    ):
+        repr = f"<error>{repr}</error>"
+
+    return repr
 
 
 def lsa(args: Namespace) -> None:
@@ -327,7 +516,7 @@ def lsa(args: Namespace) -> None:
 
             except Exception as e:
                 exit_error(
-                    f"File '{file}' could not be read due to the following "
+                    f"File '{file}' could not be parsed due to the following "
                     f"error: {e}. Use --skip-invalid-files to ignore "
                     "unparseable files and continue analysis"
                 )
@@ -377,4 +566,70 @@ def lsa(args: Namespace) -> None:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
             
             else:
-                ...
+                try:
+                    audio, _ = read_audio(file, dtype=args.dtype)
+                    audio_peak_db = flatten_nested_list(
+                        peak_db(audio, axis=-1).tolist()
+                    )
+                    audio_rms_db = flatten_nested_list(
+                        rms_db(audio, axis=-1).tolist()
+                    )
+                    audio_is_clipped = is_clipped(audio)
+                    audio_is_anomalous = is_anomalous(audio)
+                    audio_is_silent = is_silent(audio)
+                    audio_meta["peak_db"] = audio_peak_db
+                    audio_meta["rms_db"] = audio_rms_db
+                    audio_meta["is_clipped"] = audio_is_clipped
+                    audio_meta["is_anomalous"] = audio_is_anomalous
+                    audio_meta["is_silent"] = audio_is_silent
+
+                    if args.sha256 or args.sha256_short:
+                        audio_meta["sha256"] = generate_sha256_from_file(file)
+                
+                except Exception as e:
+                    exit_error(
+                        f"File '{file}' could not be parsed due to the "
+                        f"following error: {e}. Use --skip-invalid-files to "
+                        "ignore unparseable files and continue analysis"
+                    )
+            
+            # Apply filters
+            if (
+                (
+                    args.filter is not None
+                    and _matches_filter(
+                        data=audio_meta,
+                        preload=preload,
+                        expr=args.filter
+                    )
+                ) or (
+                    args.select is not None
+                    and not _matches_filter(
+                        data=audio_meta,
+                        preload=preload,
+                        expr=args.select,
+                    )
+                )
+            ):
+                continue
+  
+            if not args.summary:
+                file_repr = _audio_file_repr_from_dict(
+                    audio_meta,
+                    args.max_fname_chars,
+                    abbrev_hash=bool(args.sha256_short)
+                )
+                print(file_repr, writer=tqdm)
+
+            # Collect files for --post-action if any 
+            if args.post_action:
+                post_action_files.append(file)
+        
+        else:
+            # Format current file representation
+            if not args.summary:
+                file_repr = _audio_file_meta_repr_from_dict(
+                    audio_meta,
+                    args.max_fname_chars
+                )
+                print(file_repr, writer=tqdm)

@@ -66,3 +66,30 @@ def exit_warning(s: str, code: int = 1) -> None:
     """Prints a warning and stops the execution of the program."""
     printc(f"<warning>{s}</warning>")
     sys.exit(code)
+
+
+def bytes_to_str(bytes: int) -> str:
+    """Returns an amount of bytes in a human readable format.
+    
+    Args:
+        bytes (int): Number of bytes to represent.
+
+    Returns:
+        (str): `str` representation of `bytes`.
+    """
+    if bytes / (1024 ** 4) > 1.0:
+        repr = f"{bytes / 1024 ** 4:.1f}T"
+
+    elif bytes / (1024 ** 3) > 1.0:
+        repr = f"{bytes / 1024 ** 3:.1f}G"
+        
+    elif bytes / (1024 ** 2) > 1.0:
+        repr = f"{bytes / 1024 ** 2:.1f}M"
+        
+    elif bytes / 1024 > 1.0:
+        repr = f"{bytes / 1024:.1f}K"
+        
+    else:
+        repr = f"{bytes:d}B"
+    
+    return repr
