@@ -59,29 +59,17 @@ class __Config__(metaclass=__Singleton__):
             "</u>": self._TEXT_DECORATORS["end_decoration"]
         }
 
-        self._COMMON_FS = (
-            8_000,
-            16_000,
-            24_000,
-            32_000,
-            44_100,
-            48_000,
-            96_000,
-            192_000
-        )
-
-        self._MATH_CONSTS = {
-            "PI": 3.1415926535897932384626433832795,
-        }
-
-        self._DATETIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
-        self._DATETIME_FMT_DIR = "%Y%m%d%H%M%S%z"
         self._DEFAULT_AUDIO_IO_DTYPE = "float32"
         self._DEFAULT_AUDIO_SUBTYPE = "FLOAT"
         self._SINGLE_PROCESS_PROGRESS_BAR_COLOR = "green"
         self._MULTI_PROCESS_PROGRESS_BAR_COLOR = "cyan"
+        self._ALLOWED_AUDIO_FILE_EXTENSIONS = (
+            ".wav",
+            ".flac",
+            ".aif",
+            ".aiff"
+        )
         self._DEFAULT_RANDOM_SEED = 1234
-        self._ALLOWED_AUDIO_FILE_EXTENSIONS = (".wav", ".flac")
 
 
 def _get_text_color_tags() -> dict:
