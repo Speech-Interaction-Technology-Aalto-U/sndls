@@ -297,7 +297,6 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
     Args:
         files (List[str]): List of targeted files.
         args (Namespace): Main namespace containing user provided input.
-        cli (CommandLineInterface): CLI instance.
     """
     if args.post_action == "cp":
         output = args.post_action_output

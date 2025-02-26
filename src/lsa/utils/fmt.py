@@ -57,23 +57,41 @@ def printc_exit(
 
 
 def print_error(s: str) -> None:
-    """Prints an error."""
+    """Prints an error.
+    
+    Args:
+        s (str): Error message print.
+    """
     printc(f"<error>{s}</error>")
 
 
 def print_warning(s: str) -> None:
-    """Prints a warning."""
+    """Prints a warning.
+    
+    Args:
+        s (str): Warning message to print.
+    """
     printc(f"<warning>{s}</warning>")
 
 
 def exit_error(s: str, code: int = 1) -> None:
-    """Prints an error and stops the execution of the program."""
+    """Prints an error and stops the execution of the program.
+    
+    Args:
+        s (str): Error message to print.
+        code (int): Exit code.
+    """
     print_error(s)
     sys.exit(code)
 
 
 def exit_warning(s: str, code: int = 1) -> None:
-    """Prints a warning and stops the execution of the program."""
+    """Prints a warning and stops the execution of the program.
+
+    Args:
+        s (str): Warning message to print.
+        code (int): Exit code.
+    """
     print_warning(s)
     sys.exit(code)
 
