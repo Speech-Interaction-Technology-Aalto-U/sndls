@@ -7,8 +7,7 @@ name = "lsa"
 authors = [{name = "Esteban Gómez", email = "esteban.gomezmellado@aalto.fi"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-keywords = ["audio", "dataset"]
-classifiers = ["License :: OSI Approved :: MIT License"]
+keywords = ["audio", "dataset", "dsp"]
 dynamic = ["version", "description"]
 requires-python = ">=3.9"
 dependencies = [
@@ -17,6 +16,13 @@ dependencies = [
     "soundfile>=0.13.1",
     "tqdm>=4.67.1"
 ]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/eagomez2/lsa/issues"
+Changelog = "https://github.com/eagomez2/lsa/releases"
+Documentation = "https://eagomez2.github.io/lsa/"
+Home = "https://github.com/eagomez2/lsa"
+Repository = "https://github.com/eagomez2/lsa"
 
 [project.scripts]
 "lsa" = "lsa.cli.main:main"
@@ -34,6 +40,3 @@ extend-select = [
 ]
 ignore-init-module-imports = true
 line-length = 79
-
-[project.urls]
-Home = "https://www.github.com/eagomez2/lsa"
