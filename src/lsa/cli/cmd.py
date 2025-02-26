@@ -22,7 +22,9 @@ from ..utils.fmt import (
     bytes_to_str,
     exit_error,
     exit_warning,
-    printc as print
+    printc as print,
+    print_error,
+    print_warning
 )
 from ..utils.guards import is_file_with_ext
 from ..utils.hash import generate_sha256_from_file
@@ -633,3 +635,108 @@ def lsa(args: Namespace) -> None:
                     args.max_fname_chars
                 )
                 print(file_repr, writer=tqdm)
+        
+        # Write data to csv
+        if args.csv:
+            with open(args.csv, "a") as f:
+                writer = csv.DictWriter(f, fieldnames=cols)
+
+                # Remove fields not written to .csv
+                del audio_meta["filename"]
+
+                writer.writerow(audio_meta)
+        
+        # Update global stats based on metadata
+        if isinstance(audio_meta["duration_seconds"], Number):
+            # NOTE: It may not be a number in invalid files
+            glob_stats["total_duration"] += audio_meta["duration_seconds"]
+        
+        # Update size
+        glob_stats["total_size_bytes"] += audio_meta["size_bytes"]
+
+        # Update duration stats
+        if (
+            (glob_stats["min_duration"] is None)
+            or (audio_meta["duration_seconds"] < glob_stats["min_duration"])
+        ):
+            glob_stats["min_duration"] = audio_meta["duration_seconds"]
+        
+        if (
+            (glob_stats["max_duration"] is None)
+            or (audio_meta["duration_seconds"] > glob_stats["max_duration"])
+        ):
+            glob_stats["max_duration"] = audio_meta["duration_seconds"]
+        
+        # Update channel stats
+        if audio_meta["num_channels"] == 1:
+            glob_stats["mono_files"] += 1
+            
+        elif audio_meta["num_channels"] == 2:
+            glob_stats["stereo_files"] += 1
+        
+        elif audio_meta["num_channels"] > 2:
+            glob_stats["multichannel_files"] += 1
+        
+        # Update sample rates
+        if audio_meta["fs"] not in glob_stats["fs"]:
+            glob_stats["fs"].append(audio_meta["fs"])
+        
+        # Update global stats based on audio data
+        if not args.meta:
+            if audio_is_silent:
+                glob_stats["silent_files"] += 1
+            
+            if audio_is_anomalous:
+                glob_stats["anomalous_files"] += 1
+            
+            if audio_is_clipped:
+                glob_stats["clipped_files"] += 1
+            
+            if audio_meta["is_invalid"]:
+                glob_stats["invalid_files"] += 1
+        
+    # Get elapsed time
+    elapsed_time = perf_counter() - start_time
+
+    # Print global stats
+    if not args.summary:
+        print("")
+    
+    print(
+        "Total file(s):".ljust(22) + str(
+            glob_stats["mono_files"]
+            + glob_stats["stereo_files"]
+            + glob_stats["multichannel_files"]
+            + glob_stats["invalid_files"]
+        )
+    )
+
+    if glob_stats["invalid_files"] > 0:
+        print_error(
+            "Invalid file(s):".ljust(22) + f"{glob_stats['invalid_files']}"
+        )
+
+    print("Mono file(s):".ljust(22) + f"{glob_stats['mono_files']}")
+    print("Stereo file(s):".ljust(22) + f"{glob_stats['stereo_files']}")
+    print(
+        "Multichannel file(s):".ljust(22)
+        + f"{glob_stats['multichannel_files']}",
+    )
+
+    if len(glob_stats["fs"]) == 0:
+        fs_repr = "-"
+
+    else:
+        fs_repr = ", ".join(
+            f"{fs}hz" if fs is not None
+            else "unknown" for fs in glob_stats["fs"]
+        )
+
+    if "unknown" in fs_repr:
+        print_error("Sample rate(s):".ljust(22) + f"{fs_repr}")
+    
+    else:
+        print("Sample rate(s):".ljust(22) +  f"{fs_repr}")
+    
+    # Data dependant summary lines
+    ...
