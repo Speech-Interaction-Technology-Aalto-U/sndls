@@ -107,6 +107,30 @@ If no path is provided, the current directory will be used as the default input.
 If your folder contains audio files, you should see output similar to the
 following in your terminal (the information will vary based on your folder's contents):
 
+```bash
+/path/to/audio/dir/000_audio.wav    120.0K WAV  PCM_16        50000x1@16000hz     -18.5dBrms:0    -5.0dBpeak:0
+/path/to/audio/dir/001_audio.wav    115.0K WAV  PCM_16        52000x1@16000hz     -19.0dBrms:0    -5.5dBpeak:0
+/path/to/audio/dir/002_audio.wav     95.0K WAV  PCM_16        48000x1@16000hz     -17.0dBrms:0    -4.5dBpeak:0
+/path/to/audio/dir/003_audio.wav    130.0K WAV  PCM_16        65000x1@16000hz     -18.0dBrms:0    -3.0dBpeak:0
+
+Total file(s):        4
+Mono file(s):         4
+Stereo file(s):       0
+Multichannel file(s): 0
+Sample rate(s):       16000hz
+Skipped files:        0
+Clipped files:        0
+Anomalous files:      0
+Silent files:         0
+Total duration:       14.5 second(s)
+Minimum duration:     3.0 second(s)
+Maximum duration:     4.0 second(s)
+Average duration:     3.6 second(s)
+Total size:           460.0K
+
+Elapsed time: 5.0 ms
+```
+
 ## Help
 For a detailed description of all available options, run:
 ```bash
