@@ -105,13 +105,31 @@ If your folder contains audio files, you should see output similar to the
 following in your terminal (the information will vary based on your folder's contents):
 
 ## Help
-...
+For a detailed description of all available options, run:
+```bash
+sndls --help
+```
+This will display all parameters along with their descriptions.
 
 ## Recursive search
-...
+By default, `sndls` searches for audio files only within the specified input folder.
+To include audio files from nested directories, enable recursive search using `--recursive` or `-r`:
+
+```bash
+sndls /path/to/root/dir --recursive
+```
 
 ## Fast metadata search
-...
+Inspecting large folders or those containing long audio files can take considerable time.
+In some cases, it's preferable to extract only metadata without reading the actual audio samples.
+For such cases, the `--meta`  or `-m` option is available. In this case, only metadata
+based information will be printed to the terminal. Information such as `peak_db`, `rms_db` will
+not be calculated.
+```bash
+sndls /path/to/audio/dir --meta
+```
+For small folders, the difference in runtime may be negligible, but for larger datasets, it can be
+substantial.
 
 ## Filtering by extension
 ...
