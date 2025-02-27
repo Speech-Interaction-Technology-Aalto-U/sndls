@@ -122,6 +122,21 @@ To include audio files from nested directories, enable recursive search using `-
 sndls /path/to/root/dir --recursive
 ```
 
+## Generating SHA-256 hash
+In addition to retrieving audio metadata and data for each file, you can generate the corresponding SHA-256 hash. To visualize the full SHA-256, use the `--sha256` option. If you'd prefer to see only the last 8 characters of the SHA-256, use the `--sha256-short` option instead:
+```bash
+sndls /path/to/audio/dir --sha256
+```
+This will make your output appear as follows:
+```bash
+/path/to/audio/dir/000_audio.wav    d4f72a9b8cfd7e33ab32e4f24cfdb7f8a28f85a4b7f29de96b0b2b74369b48e5  106.3K WAV  PCM_16        52782x1@16000hz     -18.3dBrms:0    -2.5dBpeak:0
+/path/to/audio/dir/001_audio.wav    a6d1a0c02a5e55d531b29c6cf97c09cb68fe9b0f758bdf45c1ec8f7d915e9b63  111.7K WAV  PCM_16        61425x1@16000hz     -21.0dBrms:0    -4.2dBpeak:0
+/path/to/audio/dir/002_audio.wav    0f2a4d6b19b6f9cf5d8f7d47d088dc9be7b964f017028d7389f1acb46a18c8b9   90.6K WAV  PCM_16        49200x1@16000hz     -16.8dBrms:0    -3.2dBpeak:0
+/path/to/audio/dir/004_audio.wav    6a55cfef36e1a8937d66b9082f74c19bc82cdbf4db7a1c98a3f1b0883c1a7456  127.9K WAV  PCM_16        68042x1@16000hz     -19.1dBrms:0    -1.9dBpeak:0
+
+...
+```
+
 ## Fast metadata search
 Inspecting large folders or those containing long audio files can take considerable time.
 In some cases, it's preferable to extract only metadata without reading the actual audio samples.
@@ -199,9 +214,6 @@ Here is a list of all fields that can be used to refine your search:
 | `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                      | `DataFrame`   |
 
 ## Filtering by using preloaded files
-...
-
-## Generating SHA-256 hash
 ...
 
 ## Saving output to `.csv` file
