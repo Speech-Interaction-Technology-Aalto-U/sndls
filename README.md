@@ -13,7 +13,7 @@
 - [Installation](#installation)
     - [Install through pip](#install-through-pip)
     - [Install in developer mode](#install-in-developer-mode)
-    - [Install through `uv`](#install-through-uv)
+    - [Install through uv](#install-through-uv)
 - [Tutorial](#tutorial)
 - [Cite](#cite)
 - [License](#license)
