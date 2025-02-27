@@ -15,6 +15,17 @@
     - [Install in developer mode](#install-in-developer-mode)
     - [Install through uv](#install-through-uv)
 - [Tutorial](#tutorial)
+    - [Quickstart](#quickstart)
+    - [Help](#help)
+    - [Recursive search](#recursive-search)
+    - [Fast metadata search](#fast-metadata-search)
+    - [Filtering by extension](#filtering-by-extension)
+    - [Filtering by python expressions](#filtering-by-python-expressions)
+    - [Filtering by using preloaded files](#filtering-by-using-preloaded-files)
+    - [Generating SHA-256 hash](#generating-sha-256-hash)
+    - [Saving output to csv file](#saving-output-to-csv-file)
+    - [Post-actions](#post-actions)
+    - [Random data sampling and splitting](#random-data-sampling-and-splitting)
 - [Cite](#cite)
 - [License](#license)
 
@@ -84,6 +95,43 @@ Where:
 - `yyyy-zzzz` indicates the development start year and the current
 
 # Tutorial
+## Quickstart
+To inspect the audio data in a certain folder, run:
+```bash
+sndls /path/to/folder
+```
+If no path is provided, the current directory will be used as the default input.
+If your folder contains audio files, you should see output similar to the
+following in your terminal (the information will vary based on your folder's contents):
+
+## Help
+...
+
+## Recursive search
+...
+
+## Fast metadata search
+...
+
+## Filtering by extension
+...
+
+## Filtering by `python` expressions
+...
+
+## Filtering by using preloaded files
+...
+
+## Generating SHA-256 hash
+...
+
+## Saving output to `.csv` file
+...
+
+## Post-actions
+...
+
+## Random data sampling and splitting
 ...
 
 # Cite
@@ -99,4 +147,4 @@ If this tool contributed to your work, please consider citing it:
 ```
 
 # License
-For further details about the license of this package, please see [LICENSE](LICENSE).
+For further details about the license of this tool, please see [LICENSE](LICENSE).
