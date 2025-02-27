@@ -18,11 +18,11 @@ dependencies = [
 ]
 
 [project.urls]
-"Bug Tracker" = "https://github.com/eagomez2/lsa/issues"
-Changelog = "https://github.com/eagomez2/lsa/releases"
-Documentation = "https://eagomez2.github.io/lsa/"
-Home = "https://github.com/eagomez2/lsa"
-Repository = "https://github.com/eagomez2/lsa"
+"Bug Tracker" = "https://github.com/eagomez2/sndls/issues"
+Changelog = "https://github.com/eagomez2/sndls/releases"
+Documentation = "https://eagomez2.github.io/sndls/"
+Home = "https://github.com/eagomez2/sndls"
+Repository = "https://github.com/eagomez2/sndls"
 
 [project.scripts]
 "sndls" = "sndls.cli.main:main"
