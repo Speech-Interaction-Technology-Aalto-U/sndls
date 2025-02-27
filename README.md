@@ -13,7 +13,46 @@
 ...
 
 # Installation
-...
+## Install through pip
+To install `sndls`, run:
+```bash
+pip install sndls
+```
+Verify the installation with:
+```bash
+sndls --version
+```
+This should output:
+```
+sndls version x.y.z yyyy-zzzz developed by Esteban Gómez
+```
+Where:
+- `x.y.z` represents the major, minor, and patch version
+- `yyyy-zzzz` indicates the development start year and the current 
+
+## Install in developer mode
+Developer mode installation is intended for those developing new features for the tool. To set it up:
+1. Clone the repository to your desired folder using:
+```bash
+git clone <repository_url>
+```
+2. Navigate to the root directory (where `pyproject.toml` is located):
+```bash
+cd <repository_folder>
+```
+3. Install in developer mode with:
+```bash
+python -m flit install -s
+```
+This will allow immediate reflection of any code modifications when the tool is executed in the terminal.
+
+Before proceeding, ensure that Flit is installed. If not, install it with:
+```bash
+python -m pip install flit
+```
+For more information on `flit`, refer to the [Flit Command Line Interface documentation](https://flit.pypa.io/en/stable/).
+
+## Install through `uvx`
 
 # Tutorial
 ...
