@@ -251,7 +251,31 @@ In all cases, your preloaded file will be interpreted as tabular data. To exclud
  This expression will match all files whose filename is in `column_1` and `column_2` contains the value of `TARGET`. Please keep in mind that every file must be matched against your entire preload file, so using the `--preload` option for selection or filtering is expected to take longer than regular search expressions. However, it can be much more powerful in certain cases.
 
 ## Post-actions
+In some cases, we want not just to see files matching a certain criteria, but also perform actions on them (e.g., remove clipped files or silent files from a dataset). For such cases, the `--post-action` option exists. It has five available values: `cp`, `mv`, `rm`, `cp+sp`, and `mv+sp`, where:  
+- `cp` will copy the files to `--post-action-output`.  
+- `mv` will move the files to `--post-action-output`.  
+- `rm` will delete the files (this action cannot be undone).  
+- `cp+sp` will first copy the files to `--post-action-output` and then create `--post-action-num-splits` splits of the data.  
+- `mv+sp` will first move the files to `--post-action-output` and then create `--post-action-num-splits` splits of the data.  
+
+In all cases, you will be asked to confirm the action through the command line. Here is an example:
+
+```bash
+sndls /path/to/audio/dir --post-action cp --post-action-output /post/action/output
 ...
+N file(s) will be copied to '/post/action/output'  
+Do you want to continue? [y/n]:
+```
+Write `y` or n and then press enter. The action will then be executed.
+If you are using this tool as part of an automated pipeline, you may want to skip user input. In such cases, there is the `--unattended` or `-u` option. When used, it will skip the confirmation prompt, but ensure that your action is correctly set up beforehand:
+```bash
+sndls /path/to/audio/dir --post-action cp --post-action-output /post/action/output --unattended
+...
+N file(s) will be copied to '/post/action/output'  
+Creating post action output folder '/post/action/output'  
+4/4 file(s) copied to '/post/action/output'
+```
+The additional output lines show if all your files were correctly copied, moved, or deleted. Please note that moving or copying files will not overwrite already existing files.
 
 ## Random data sampling and splitting
 ...
