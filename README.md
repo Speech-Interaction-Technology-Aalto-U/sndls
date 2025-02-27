@@ -137,6 +137,17 @@ This will make your output appear as follows:
 ...
 ```
 
+If `--sha256-short` is used instead, you should see:
+
+```bash
+/path/to/audio/dir/000_audio.wav    369b48e5  106.3K WAV  PCM_16        52782x1@16000hz     -18.3dBrms:0    -2.5dBpeak:0
+/path/to/audio/dir/001_audio.wav    915e9b63  111.7K WAV  PCM_16        61425x1@16000hz     -21.0dBrms:0    -4.2dBpeak:0
+/path/to/audio/dir/002_audio.wav    6a18c8b9   90.6K WAV  PCM_16        49200x1@16000hz     -16.8dBrms:0    -3.2dBpeak:0
+/path/to/audio/dir/004_audio.wav    3c1a7456  127.9K WAV  PCM_16        68042x1@16000hz     -19.1dBrms:0    -1.9dBpeak:0
+
+...
+```
+
 ## Fast metadata search
 Inspecting large folders or those containing long audio files can take considerable time.
 In some cases, it's preferable to extract only metadata without reading the actual audio samples.
