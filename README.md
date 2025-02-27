@@ -52,7 +52,30 @@ python -m pip install flit
 ```
 For more information on `flit`, refer to the [Flit Command Line Interface documentation](https://flit.pypa.io/en/stable/).
 
-## Install through `uvx`
+## Install through `uv`
+Alternatively, you can install the tool using `uv`. This is adequate for when you can to keep it isolated from your `python`
+environment setup and just run it to analyze a certain data collection.
+
+1. Install `uv` and `uvx` following the instructions for your operating system in [`uv` website](https://docs.astral.sh/uv/getting-started/installation/).
+2. Run:
+```bash
+uv tool install sndls
+```
+3. Verify the installation with
+```bash
+uv tool run sndls --version
+```
+or you can use the shortcut version `uvx`:
+```bash
+uvx sndls --version
+```
+This should output:
+```
+sndls version x.y.z yyyy-zzzz developed by Esteban Gómez
+```
+Where:
+- `x.y.z` represents the major, minor, and patch version
+- `yyyy-zzzz` indicates the development start year and the current
 
 # Tutorial
 ...
