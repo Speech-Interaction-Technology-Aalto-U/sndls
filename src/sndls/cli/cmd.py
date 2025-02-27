@@ -594,8 +594,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
         raise AssertionError
 
 
-def lsa(args: Namespace) -> None:
-    """Main routine triggered by the `lsa` command.
+def sndls(args: Namespace) -> None:
+    """Main routine triggered by the `sndls` command.
     
     Args:
         args (Namespace): Main namespace containing user provided input.

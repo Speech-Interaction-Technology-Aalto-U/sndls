@@ -1,11 +1,11 @@
 import sys
 import argparse
-from .cmd import lsa
+from .cmd import sndls
 from ..utils.fmt import (
     printc_exit as print_exit,
     exit_warning
 )
-from lsa import (
+from sndls import (
     __description__,
     __version_repr__
 )
