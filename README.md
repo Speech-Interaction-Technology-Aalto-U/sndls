@@ -144,7 +144,59 @@ sndls /path/to/audio/dir --extension .wav .flac
 In this case, the search will include only `.wav` and `.flac` files, ignoring all other extensions.
 
 ## Filtering by `python` expressions
-...
+In addition to filtering by extension using the `--extension` or `-e` option, you can create custom
+filters to find files with specific traits. This can be useful for tasks like:
+
+- Finding clipped, silent, or anomalous files
+- Finding files within a specific duration range
+- Finding files with a particular sample rate
+
+For these cases, the `--select` or `-`) option allows you to select files that meet certain criteria, while
+the `--filter` or `-f` option lets you select all files except those that match the filter. Both options
+accept `python` expressions for greater flexibility in your search. 
+
+Note that these options are mutually exclusive, meaning only one can be used at a time.
+
+For example, to search for only clipped mono files, run:
+```bash
+sndls /path/to/audio/dir --select "is_clipped and num_channels == 1"
+```
+
+To filter out files shorter than 3.0 seconds, run:
+```bash
+sndls /path/to/audio/dir --filter "duration_seconds < 3.0"
+```
+
+Please note that some fields contain lists of values, where the length depends on the
+number of channels in the file, such as `peak_db` or `rms_db`. In such cases, methods
+like `any()` or `all()` can be useful.
+
+For example, to find all files where all channels have peak values in decibels (`peak_db`)
+greater than -3.0 dB, you can do the following:
+```bash
+sndls /path/to/audio/dir --select "all(db > -3.0 for db in peak_db)"
+```
+
+Here is a list of all fields that can be used to refine your search:
+| Field                      | Description                                                                  | Data type     |
+|----------------------------|------------------------------------------------------------------------------|---------------|
+| `file`                     | Audio file path                                                              | `str`         |
+| `filename`                 | Audio filename                                                               | `str`         |
+| `fs`                       | Audio sample rate in hertz (e.g. 16000, 48000)                               | `int`         |
+| `num_channels`             | Number of channels in the file                                               | `int`         |
+| `num_samples_per_channels` | Number of samples per channels                                               | `int`         |
+| `duration_seconds`         | Duration of the file in seconds                                              | `float`       |
+| `size_bytes`               | Size of the file in bytes                                                    | `int`         |
+| `fmt`                      | File format (`WAV`, `RF64`, etc)                                             | `str`         |
+| `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                              | `str`         |
+| `peak_db`                  | Per-channel peak value in decibels                                           | `List[float]` |
+| `rms_db`                   | Per-channel root mean square value in decibels                               | `List[float]` |
+| `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS               | `bool`        |
+| `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range      | `bool`        |
+| `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                               | `bool`        |
+| `is_invalid`               | `True` if the file could not be read. Only valid with `--skip-invalid-files` | `bool`        |
+| `sha256`                   | SHA-256 hash (only available if `--sha256` or `--sha256-short` is enabled    | `str`         |
+| `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                      | `DataFrame`   |
 
 ## Filtering by using preloaded files
 ...
