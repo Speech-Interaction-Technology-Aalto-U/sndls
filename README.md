@@ -160,6 +160,16 @@ sndls /path/to/audio/dir --meta
 For small folders, the difference in runtime may be negligible, but for larger datasets, it can be
 substantial.
 
+## Saving output to `.csv` file
+The results of a given search can also be saved to a `.csv` file as tabular data for later inspection.
+To do this, simply provide the `--csv` argument followed by the name of your desired output file:
+```bash
+sndls /path/to/audio/dir --csv output.csv
+```
+
+Please note that the `.csv` file will include the full file path and full SHA-256 (if `--sha256`
+or `--sha256-short` is enabled). The results included in the `.csv` will be the exact results that match your search.
+
 ## Filtering by extension
 Listed files can be filtered by many ways, including their extension. Only certain audio file extensions
 that can be parsed by `soundfile` are currently supported. Use the `--extension` or `-e` option if you want
@@ -225,10 +235,20 @@ Here is a list of all fields that can be used to refine your search:
 | `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                      | `DataFrame`   |
 
 ## Filtering by using preloaded files
-...
+`sndls` provides a `--preload` option to load a `.csv`, `.tsv`, or `.txt` file that can be used with the `--filter` and `--select` options. This feature allows you to expand your search and filtering capabilities, such as matching files from a specific file or finding a particular set of SHA-256 hashes, etc. To preload a file, you can do the following:
+```bash
+sndls /path/to/audio/dir --preload /path/to/preload/file
+```
 
-## Saving output to `.csv` file
-...
+In all cases, your preloaded file will be interpreted as tabular data. To exclude the first row when it contains header information, use the `--preload-has-header` option. Otherwise, every row will be treated as data. All data from your preloaded file will be availabl
+ under the preload variable when writing `--filter` or `--select` expressions. You can use it as a regular `DataFrame`. If there is no header
+ information, the columns will be automatically numbered as `column_1`, `column_2`, etc.
+
+ ```bash
+ sndls /path/to/audio/dir --preload /path/to/preload/file --select "((preload['column_1'].str.contains(filename)) & (preload['column_2'] == 'TARGET')).any()"
+ ```
+
+ This expression will match all files whose filename is in `column_1` and `column_2` contains the value of `TARGET`. Please keep in mind that every file must be matched against your entire preload file, so using the `--preload` option for selection or filtering is expected to take longer than regular search expressions. However, it can be much more powerful in certain cases.
 
 ## Post-actions
 ...
