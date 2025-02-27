@@ -18,12 +18,12 @@
     - [Quickstart](#quickstart)
     - [Help](#help)
     - [Recursive search](#recursive-search)
+    - [Generating SHA-256 hash](#generating-sha-256-hash)
     - [Fast metadata search](#fast-metadata-search)
+    - [Saving output to csv file](#saving-output-to-csv-file)
     - [Filtering by extension](#filtering-by-extension)
     - [Filtering by python expressions](#filtering-by-python-expressions)
     - [Filtering by using preloaded files](#filtering-by-using-preloaded-files)
-    - [Generating SHA-256 hash](#generating-sha-256-hash)
-    - [Saving output to csv file](#saving-output-to-csv-file)
     - [Post-actions](#post-actions)
     - [Random data sampling and splitting](#random-data-sampling-and-splitting)
 - [Cite](#cite)
@@ -278,7 +278,21 @@ N/N file(s) copied to '/post/action/output'
 The additional output lines show if all your files were correctly copied, moved, or deleted. Please note that moving or copying files will not overwrite already existing files.
 
 ## Random data sampling and splitting
-...
+`sndls` can be useful for sampling files that meet certain conditions from a large dataset, especially when copying everything or manually filtering the files might be time-consuming. The `--sample` option allows you to achieve this. In summary, this option can randomly sample a given number of files from your search results as follows:
+```bash
+sndls /path/to/audio/dir --sample 20
+```
+This command randomly samples 20 audio files from `/path/to/audio/dir`. These files can be used with the `--post-action` option to copy them to another folder for later inspection:
+```bash
+sndls /path/to/audio/dir --sample 20 --post-action cp --post-action-output /path/to/output/dir
+```
+This allows you to randomly sample data based on specific conditions, as it can be combined with the `--filter`, `--select`, or any other available options. To change the random seed used for selecting the files, you can do so as follows:
+```bash
+sndls /path/to/audio/dir --sample 20 --post-action cp --post-action-output /path/to/output/dir --random-seed 3673
+```
+Where 3673 can be any integer number that will be used as a random seed.
+
+Additionally, if a `float` between `0.0` and `1.0` is provided with the `--sample` option, it will be interpreted as a percentage of the total number of files.
 
 # Cite
 If this tool contributed to your work, please consider citing it:
