@@ -10,7 +10,13 @@
 - Executing post-processing actions, such as removing clipped files, copying files that meet certain conditions, and more.
 
 # Table of contents
-...
+- [Installation](#installation)
+    - [Install through pip](#install-through-pip)
+    - [Install in developer mode](#install-in-developer-mode)
+    - [Install through `uv`](#install-through-uv)
+- [Tutorial](#tutorial)
+- [Cite](#cite)
+- [License](#license)
 
 # Installation
 ## Install through pip
