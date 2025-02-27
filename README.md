@@ -95,6 +95,9 @@ Where:
 - `yyyy-zzzz` indicates the development start year and the current
 
 # Tutorial
+This quick tutorial is structured into multiple sections, each focusing on a
+fundamental aspect of `sndls` and its core functionalities.
+
 ## Quickstart
 To inspect the audio data in a certain folder, run:
 ```bash
@@ -132,7 +135,13 @@ For small folders, the difference in runtime may be negligible, but for larger d
 substantial.
 
 ## Filtering by extension
-...
+Listed files can be filtered by many ways, including their extension. Only certain audio file extensions
+that can be parsed by `soundfile` are currently supported. Use the `--extension` or `-e` option if you want
+to restrict your results to a certain extension or extensions:
+```bash
+sndls /path/to/audio/dir --extension .wav .flac
+```
+In this case, the search will include only `.wav` and `.flac` files, ignoring all other extensions.
 
 ## Filtering by `python` expressions
 ...
