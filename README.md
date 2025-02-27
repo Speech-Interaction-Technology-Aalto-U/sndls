@@ -1,6 +1,6 @@
 # `sndls`: An audio-friendly `ls`, with a little something extra
 
-`sndls` is a command-line tool designed for quick and efficient inspection of audio data. It provides functionalities such as:
+`sndls` (sound `ls`) is a command-line tool designed for quick and efficient inspection of audio data. It provides functionalities such as:
 
 - Saving search results to a `.csv` file for later analysis.
 - Detecting clipped, silent, or anomalous files that may impact machine learning pipelines.
