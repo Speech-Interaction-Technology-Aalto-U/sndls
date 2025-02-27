@@ -266,14 +266,14 @@ sndls /path/to/audio/dir --post-action cp --post-action-output /post/action/outp
 N file(s) will be copied to '/post/action/output'  
 Do you want to continue? [y/n]:
 ```
-Write `y` or n and then press enter. The action will then be executed.
+Write `y` or `n` and then press enter. The action will then be executed.
 If you are using this tool as part of an automated pipeline, you may want to skip user input. In such cases, there is the `--unattended` or `-u` option. When used, it will skip the confirmation prompt, but ensure that your action is correctly set up beforehand:
 ```bash
 sndls /path/to/audio/dir --post-action cp --post-action-output /post/action/output --unattended
 ...
 N file(s) will be copied to '/post/action/output'  
 Creating post action output folder '/post/action/output'  
-4/4 file(s) copied to '/post/action/output'
+N/N file(s) copied to '/post/action/output'
 ```
 The additional output lines show if all your files were correctly copied, moved, or deleted. Please note that moving or copying files will not overwrite already existing files.
 
