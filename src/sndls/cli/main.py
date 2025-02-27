@@ -199,7 +199,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        lsa(args)
+        sndls(args)
     
     except KeyboardInterrupt:
         exit_warning("Process terminated by the user")
