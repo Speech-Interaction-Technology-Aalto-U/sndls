@@ -20,7 +20,7 @@ dependencies = [
 [project.urls]
 "Bug Tracker" = "https://github.com/eagomez2/sndls/issues"
 Changelog = "https://github.com/eagomez2/sndls/releases"
-Documentation = "https://eagomez2.github.io/sndls/"
+Documentation = "https://github.com/eagomez2/sndls"
 Home = "https://github.com/eagomez2/sndls"
 Repository = "https://github.com/eagomez2/sndls"
 
