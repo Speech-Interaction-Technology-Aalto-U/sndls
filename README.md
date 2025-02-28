@@ -211,7 +211,7 @@ filters to find files with specific traits. This can be useful for tasks like:
 - Finding files within a specific duration range
 - Finding files with a particular sample rate
 
-For these cases, the `--select` or `-`) option allows you to select files that meet certain criteria, while
+For these cases, the `--select` or `-s`) option allows you to select files that meet certain criteria, while
 the `--filter` or `-f` option lets you select all files except those that match the filter. Both options
 accept `python` expressions for greater flexibility in your search. 
 
