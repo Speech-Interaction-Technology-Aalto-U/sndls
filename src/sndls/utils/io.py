@@ -14,7 +14,7 @@ from .exceptions import FolderNotFoundError
 from .guards import is_file_or_error
 from .collections import make_list
 from .fmt import (
-    printc,
+    _decorate_str,
     exit_warning
 )
 
@@ -162,7 +162,7 @@ def ask_confirmation(
             if user_input is not None:
                 print(f"<error>Invalid input '{user_input}'</error>")
 
-            user_input = input(printc(s))
+            user_input = input(_decorate_str(s))
 
             if str(user_input) == "y":
                 response = True

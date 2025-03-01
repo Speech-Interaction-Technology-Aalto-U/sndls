@@ -56,43 +56,47 @@ def printc_exit(
     sys.exit(code)
 
 
-def print_error(s: str) -> None:
+def print_error(s: str, writer: Optional[tqdm] = None) -> None:
     """Prints an error.
     
     Args:
         s (str): Error message print.
+        writer (Optional[tqdm]): Writer to use.
     """
-    printc(f"<error>{s}</error>")
+    printc(f"<error>{s}</error>", writer=writer)
 
 
-def print_warning(s: str) -> None:
+def print_warning(s: str, writer: Optional[tqdm] = None) -> None:
     """Prints a warning.
     
     Args:
         s (str): Warning message to print.
+        writer (Optional[tqdm]): Writer to use.
     """
-    printc(f"<warning>{s}</warning>")
+    printc(f"<warning>{s}</warning>", writer=writer)
 
 
-def exit_error(s: str, code: int = 1) -> None:
+def exit_error(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
     """Prints an error and stops the execution of the program.
     
     Args:
         s (str): Error message to print.
         code (int): Exit code.
+        writer (Optional[tqdm]): Writer to use.
     """
-    print_error(s)
+    print_error(s, writer=writer)
     sys.exit(code)
 
 
-def exit_warning(s: str, code: int = 1) -> None:
+def exit_warning(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
     """Prints a warning and stops the execution of the program.
 
     Args:
         s (str): Warning message to print.
         code (int): Exit code.
+        writer (Optional[tqdm]): Writer to use.
     """
-    print_warning(s)
+    print_warning(s, writer=writer)
     sys.exit(code)
 
 
