@@ -9,6 +9,8 @@
 - Performing fast, metadata-based file inspection.
 - Executing post-processing actions, such as removing clipped files, copying files that meet certain conditions, and more.
 
+`sndls` currently supports the following extensions: `.wav`, `.wave`, `.flac`, `.mp3`, `.aif`, `.aiff`.
+
 # Table of contents
 - [Installation](#installation)
     - [Install through pip](#install-through-pip)
