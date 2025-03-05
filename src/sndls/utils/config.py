@@ -68,6 +68,7 @@ class __Config__(metaclass=__Singleton__):
             ".aiff",
             ".mp3",
             ".flac",
+            ".ogg",
             ".wav",
             ".wave"
         )
