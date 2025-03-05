@@ -64,10 +64,13 @@ class __Config__(metaclass=__Singleton__):
         self._SINGLE_PROCESS_PROGRESS_BAR_COLOR = "green"
         self._MULTI_PROCESS_PROGRESS_BAR_COLOR = "cyan"
         self._ALLOWED_AUDIO_FILE_EXTENSIONS = (
-            ".wav",
-            ".flac",
             ".aif",
-            ".aiff"
+            ".aiff",
+            ".mp3",
+            ".flac",
+            ".ogg",
+            ".wav",
+            ".wave"
         )
 
 
