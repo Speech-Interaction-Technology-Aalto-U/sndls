@@ -1,8 +1,5 @@
 import numpy as np
-from typing import (
-    Callable,
-    Optional
-)
+from typing import Optional
 from scipy.signal import stft
 from .config import get_default_eps
 from .collections import flatten_nested_list
