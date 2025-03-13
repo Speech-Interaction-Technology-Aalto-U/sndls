@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Optional
 )
+from scipy.signal import stft
 from .config import get_default_eps
 from .collections import flatten_nested_list
 
@@ -154,32 +155,56 @@ def spectral_rolloff(
         fs: int,
         fft_size: int,
         hop_size: Optional[int],
-        window_size: Optional[int] = None,
-        window_fn: Callable = np.hanning,
+        window: str = "hann",
         rolloff: float = 0.9
 ) -> np.ndarray:
     """Calculates the spectral rolloff of an input array `x`. That is, the
-        frequency bin under which `rolloff` percent of the energy is
-        accumulated.
+    frequency bin under which `rolloff` percent of the energy is
+    accumulated.
 
-        Args:
-            x (np.ndarray): Input audio data.
-            fs (int): Sample rate.
-            fft_size (int): Size of the FFT.
-            hop_size (Optional[int]): Hop size of the FFT.
-            window_size (Optional[int]): FFT window size.
-            window_fn (Callable): FFT window function.
-            rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
-                0.9 means that the resulting rolloff for a given frequency is
-                the value under which 90 percent of the energy is accumulated.
-        
-        Returns:
-            np.ndarray: Array containing framewise roll-off.
+    Args:
+        x (np.ndarray): Input audio data.
+        fs (int): Sample rate.
+        fft_size (int): Size of the FFT.
+        hop_size (Optional[int]): Hop size of the FFT.
+        window (str): Window type.
+        rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
+            0.9 means that the resulting rolloff for a given frequency is
+            the value under which 90 percent of the energy is accumulated.
+    
+    Returns:
+        np.ndarray: Array containing framewise roll-off.
     """
     if rolloff < 0.0 or rolloff > 1.0:
         raise ValueError("rolloff must be between 0.0 and 1.0")
     
-    # Get window
-    window_size = fft_size if window_size is None else window_size
-    window = window_fn(window_size)
+    # Compute magnitude
+    fc, _, x_stft = stft(
+        x,
+        fs=fs,
+        nperseg=fft_size,
+        nfft=fft_size,
+        noverlap=hop_size,
+        window=window,
+        return_onesided=True,
+        padded=False,
+        scaling="spectrum"
+    )
+    x_mag = np.abs(x_stft)
+    fc = np.expand_dims(fc, axis=(0, -1))
+    fc = np.broadcast_to(fc, x_mag.shape)
 
+    # Get cumulative sum and obtain rolloff threshold per frame
+    x_mag_cumsum = np.cumsum(x_mag, axis=-2)
+    rolloff_threshold = rolloff * x_mag_cumsum[..., -1, :]
+
+    # Mask all values below threshold as inf
+    rolloff_idx = np.where(x_mag_cumsum < rolloff_threshold, np.inf, 1.0)
+
+    with np.errstate(invalid="ignore"):
+        rolloff_freq = fc * rolloff_idx
+    
+    rolloff_freq[np.isnan(rolloff_freq)] = np.inf
+    rolloff_freq = np.min(rolloff_freq, axis=-2, keepdims=True)
+
+    return rolloff_freq
