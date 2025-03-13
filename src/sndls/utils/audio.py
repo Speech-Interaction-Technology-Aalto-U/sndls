@@ -1,5 +1,8 @@
 import numpy as np
-from typing import Optional
+from typing import (
+    Callable,
+    Optional
+)
 from .config import get_default_eps
 from .collections import flatten_nested_list
 
@@ -144,3 +147,39 @@ def is_silent(x: np.ndarray, thresh_db: float = -80.0, axis: int = -1) -> bool:
     """
     db_rms = flatten_nested_list(rms_db(x, axis=axis).tolist())
     return all(chl_db_rms < thresh_db for chl_db_rms in db_rms)
+
+
+def spectral_rolloff(
+        x: np.ndarray,
+        fs: int,
+        fft_size: int,
+        hop_size: Optional[int],
+        window_size: Optional[int] = None,
+        window_fn: Callable = np.hanning,
+        rolloff: float = 0.9
+) -> np.ndarray:
+    """Calculates the spectral rolloff of an input array `x`. That is, the
+        frequency bin under which `rolloff` percent of the energy is
+        accumulated.
+
+        Args:
+            x (np.ndarray): Input audio data.
+            fs (int): Sample rate.
+            fft_size (int): Size of the FFT.
+            hop_size (Optional[int]): Hop size of the FFT.
+            window_size (Optional[int]): FFT window size.
+            window_fn (Callable): FFT window function.
+            rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
+                0.9 means that the resulting rolloff for a given frequency is
+                the value under which 90 percent of the energy is accumulated.
+        
+        Returns:
+            np.ndarray: Array containing framewise roll-off.
+    """
+    if rolloff < 0.0 or rolloff > 1.0:
+        raise ValueError("rolloff must be between 0.0 and 1.0")
+    
+    # Get window
+    window_size = fft_size if window_size is None else window_size
+    window = window_fn(window_size)
+
