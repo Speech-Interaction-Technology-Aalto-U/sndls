@@ -38,7 +38,8 @@ from ..utils.audio import (
     is_clipped,
     is_silent,
     peak_db,
-    rms_db
+    rms_db,
+    spectral_rolloff
 )
 
 
@@ -901,7 +902,7 @@ def sndls(args: Namespace) -> None:
             
             else:
                 try:
-                    audio, _ = read_audio(file, dtype=args.dtype)
+                    audio, fs = read_audio(file, dtype=args.dtype)
                     audio_peak_db = flatten_nested_list(
                         peak_db(audio, axis=-1).tolist()
                     )
@@ -916,6 +917,19 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_clipped"] = audio_is_clipped
                     audio_meta["is_anomalous"] = audio_is_anomalous
                     audio_meta["is_silent"] = audio_is_silent
+
+                    if args.spectral_rolloff is not None:
+                        # audio_meta["spectral_rolloff"] = np.mean(
+                        #     spectral_rolloff(
+                        #         audio,
+                        #         fs,
+                        #         args.fft_size,
+                        #         args.hop_size
+                        #     ),
+                        #     keepdims=True
+                        # )
+                        # TODO: Add spectral_rolloff display
+                        ...
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
