@@ -621,6 +621,13 @@ def sndls(args: Namespace) -> None:
             "--filter or --select"
         )
     
+    # Check spectral-rolloff if enabled
+    if (
+        args.spectral_rolloff is not None
+        and (args.spectral_rolloff > 1.0 or args.spectral_rolloff < 0.0)
+    ):
+        exit_error("--spectral-rolloff should be a value between 0.0 and 1.0")
+    
     # Check csv does not exist already if it should be written
     if args.csv and os.path.isfile(args.csv) and not args.csv_overwrite:
         exit_error(

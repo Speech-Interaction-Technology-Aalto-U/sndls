@@ -96,6 +96,14 @@ def get_parser() -> argparse.Namespace:
              "is considered silent"
     )
     parser.add_argument(
+        "--spectral-rolloff",
+        type=float,
+        help=(
+            "computes the spectral rolloff in hertz for a given cumulative "
+            "energy percentage between 0.0 and 1.0"
+        )
+    )
+    parser.add_argument(
         "-p", "--post-action",
         choices=["cp", "mv", "rm", "mv+sp", "cp+sp"],
         help=(

@@ -180,8 +180,8 @@ def spectral_rolloff(
         x,
         fs=fs,
         nperseg=fft_size,
-        nfft=fft_size,
-        noverlap=hop_size,
+        nfft=None,
+        noverlap=fft_size - hop_size,
         window=window,
         return_onesided=True,
         padded=False,
@@ -196,12 +196,7 @@ def spectral_rolloff(
     rolloff_threshold = rolloff * x_mag_cumsum[..., -1, :]
 
     # Mask all values below threshold as inf
-    rolloff_idx = np.where(x_mag_cumsum < rolloff_threshold, np.inf, 1.0)
-
-    with np.errstate(invalid="ignore"):
-        rolloff_freq = fc * rolloff_idx
-    
-    rolloff_freq[np.isnan(rolloff_freq)] = np.inf
-    rolloff_freq = np.min(rolloff_freq, axis=-2, keepdims=True)
+    rolloff_idx = np.where(x_mag_cumsum < rolloff_threshold, np.nan, 1.0)
+    rolloff_freq = np.nanmin(fc * rolloff_idx, axis=-2, keepdims=True)
 
     return rolloff_freq
