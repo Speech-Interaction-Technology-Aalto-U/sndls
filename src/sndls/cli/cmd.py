@@ -245,14 +245,32 @@ def _audio_file_repr_from_dict(
         db_repr = "- dBrms".rjust(16) + " " + "- dBpeak".rjust(16)
     
     else:
-        db_repr = " ".join(
-            [
-                f"{r:.1f}dBrms:{idx}".rjust(16)
-                + f"{p:.1f}dBpeak:{idx}".rjust(16)
-                for idx, (r, p)
-                in enumerate(zip(data["rms_db"], data["peak_db"]))
-            ]
-        )
+        if "spectral_rolloff" in data:
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    + f"{s / 1000.0:.1f}kHz:{idx}".rjust(12)
+                    for idx, (r, p, s)
+                    in enumerate(
+                        zip(
+                            data["rms_db"],
+                            data["peak_db"],
+                            data["spectral_rolloff"]
+                        )
+                    )
+                ]
+            )
+        
+        else:
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    for idx, (r, p)
+                    in enumerate(zip(data["rms_db"], data["peak_db"]))
+                ]
+            )
 
     # Assemble representation
     repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr} {db_repr}"
@@ -919,17 +937,19 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_silent"] = audio_is_silent
 
                     if args.spectral_rolloff is not None:
-                        # audio_meta["spectral_rolloff"] = np.mean(
-                        #     spectral_rolloff(
-                        #         audio,
-                        #         fs,
-                        #         args.fft_size,
-                        #         args.hop_size
-                        #     ),
-                        #     keepdims=True
-                        # )
-                        # TODO: Add spectral_rolloff display
-                        ...
+                        audio_meta["spectral_rolloff"] = flatten_nested_list(
+                                np.mean(
+                                spectral_rolloff(
+                                    audio,
+                                    fs,
+                                    args.fft_size,
+                                    args.hop_size,
+                                    rolloff=args.spectral_rolloff
+                                ),
+                                axis=-1,
+                                keepdims=True
+                            ).tolist()
+                        )
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)

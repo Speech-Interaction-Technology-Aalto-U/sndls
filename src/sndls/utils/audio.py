@@ -193,7 +193,9 @@ def spectral_rolloff(
 
     # Get cumulative sum and obtain rolloff threshold per frame
     x_mag_cumsum = np.cumsum(x_mag, axis=-2)
-    rolloff_threshold = rolloff * x_mag_cumsum[..., -1, :]
+    rolloff_threshold = np.expand_dims(
+        rolloff * x_mag_cumsum[..., -1, :], axis=-2
+    )
 
     # Mask all values below threshold as inf
     rolloff_idx = np.where(x_mag_cumsum < rolloff_threshold, np.nan, 1.0)

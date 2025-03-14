@@ -254,6 +254,7 @@ Here is a list of all fields that can be used to refine your search:
 | `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                              | `str`         |
 | `peak_db`                  | Per-channel peak value in decibels                                           | `List[float]` |
 | `rms_db`                   | Per-channel root mean square value in decibels                               | `List[float]` |
+| `spectral_rolloff`         | Spectral-rolloff in hertz (only available with `--spectral-rolloff`)         | `List[float]` |
 | `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS               | `bool`        |
 | `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range      | `bool`        |
 | `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                               | `bool`        |
