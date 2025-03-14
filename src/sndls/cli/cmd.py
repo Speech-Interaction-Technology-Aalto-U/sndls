@@ -634,10 +634,11 @@ def sndls(args: Namespace) -> None:
         or args.csv
         or args.filter
         or args.select 
+        or args.spectral_rolloff
     ):
         exit_error(
             "--meta not allowed with: --sha256, --sha256-short, --csv, "
-            "--filter or --select"
+            "--filter, --select, --spectral-rolloff"
         )
     
     # Check spectral-rolloff if enabled
@@ -819,6 +820,9 @@ def sndls(args: Namespace) -> None:
             "is_invalid"
         ]
 
+        if args.spectral_rolloff:
+            cols.insert(-4, "spectral_rolloff")
+
         # Optional fields
         if args.sha256 or args.sha256_short:
             cols.insert(1, "sha256")
@@ -884,7 +888,7 @@ def sndls(args: Namespace) -> None:
             # Update audio stats
             if args.skip_invalid_files:
                 try:
-                    audio, _ = read_audio(file, dtype=args.dtype)
+                    audio, fs = read_audio(file, dtype=args.dtype)
                     audio_peak_db = flatten_nested_list(
                         peak_db(audio, axis=-1).tolist()
                     )
@@ -914,6 +918,21 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_anomalous"] = False
                     audio_meta["is_silent"] = False
                     audio_meta["is_invalid"] = True
+
+                    if args.spectral_rolloff is not None:
+                        audio_meta["spectral_rolloff"] = flatten_nested_list(
+                                np.mean(
+                                spectral_rolloff(
+                                    audio,
+                                    fs,
+                                    args.fft_size,
+                                    args.hop_size,
+                                    rolloff=args.spectral_rolloff
+                                ),
+                                axis=-1,
+                                keepdims=True
+                            ).tolist()
+                        )
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
@@ -1060,7 +1079,7 @@ def sndls(args: Namespace) -> None:
             
             if audio_meta["is_invalid"]:
                 glob_stats["invalid_files"] += 1
-        
+            
     # Get elapsed time
     elapsed_time = perf_counter() - start_time
 
