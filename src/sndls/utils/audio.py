@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Optional
+from scipy.signal import stft
 from .config import get_default_eps
 from .collections import flatten_nested_list
 
@@ -144,3 +145,60 @@ def is_silent(x: np.ndarray, thresh_db: float = -80.0, axis: int = -1) -> bool:
     """
     db_rms = flatten_nested_list(rms_db(x, axis=axis).tolist())
     return all(chl_db_rms < thresh_db for chl_db_rms in db_rms)
+
+
+def spectral_rolloff(
+        x: np.ndarray,
+        fs: int,
+        fft_size: int,
+        hop_size: Optional[int],
+        window: str = "hann",
+        rolloff: float = 0.9
+) -> np.ndarray:
+    """Calculates the spectral rolloff of an input array `x`. That is, the
+    frequency bin under which `rolloff` percent of the energy is
+    accumulated.
+
+    Args:
+        x (np.ndarray): Input audio data.
+        fs (int): Sample rate.
+        fft_size (int): Size of the FFT.
+        hop_size (Optional[int]): Hop size of the FFT.
+        window (str): Window type.
+        rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
+            0.9 means that the resulting rolloff for a given frequency is
+            the value under which 90 percent of the energy is accumulated.
+    
+    Returns:
+        np.ndarray: Array containing framewise roll-off.
+    """
+    if rolloff < 0.0 or rolloff > 1.0:
+        raise ValueError("rolloff must be between 0.0 and 1.0")
+    
+    # Compute magnitude
+    fc, _, x_stft = stft(
+        x,
+        fs=fs,
+        nperseg=fft_size,
+        nfft=None,
+        noverlap=fft_size - hop_size,
+        window=window,
+        return_onesided=True,
+        padded=False,
+        scaling="spectrum"
+    )
+    x_mag = np.abs(x_stft)
+    fc = np.expand_dims(fc, axis=(0, -1))
+    fc = np.broadcast_to(fc, x_mag.shape)
+
+    # Get cumulative sum and obtain rolloff threshold per frame
+    x_mag_cumsum = np.cumsum(x_mag, axis=-2)
+    rolloff_threshold = np.expand_dims(
+        rolloff * x_mag_cumsum[..., -1, :], axis=-2
+    )
+
+    # Mask all values below threshold as inf
+    rolloff_idx = np.where(x_mag_cumsum < rolloff_threshold, np.nan, 1.0)
+    rolloff_freq = np.nanmin(fc * rolloff_idx, axis=-2, keepdims=True)
+
+    return rolloff_freq

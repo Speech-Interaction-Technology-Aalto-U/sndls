@@ -254,6 +254,7 @@ Here is a list of all fields that can be used to refine your search:
 | `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                              | `str`         |
 | `peak_db`                  | Per-channel peak value in decibels                                           | `List[float]` |
 | `rms_db`                   | Per-channel root mean square value in decibels                               | `List[float]` |
+| `spectral_rolloff`         | Spectral-rolloff in hertz (only available with `--spectral-rolloff`)         | `List[float]` |
 | `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS               | `bool`        |
 | `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range      | `bool`        |
 | `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                               | `bool`        |
@@ -332,6 +333,8 @@ If this tool contributed to your work, please consider citing it:
   url    = {https://github.com/eagomez2/sndls}
 }
 ```
+
+This tool was developed by <a href="https://estebangomez.me/" target="_blank">Esteban Gómez</a>, member of the <a href="https://www.aalto.fi/en/department-of-information-and-communications-engineering/speech-interaction-technology" target="_blank">Speech Interaction Technology group from Aalto University</a>.
 
 # License
 For further details about the license of this tool, please see [LICENSE](LICENSE).

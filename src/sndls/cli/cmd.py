@@ -38,7 +38,8 @@ from ..utils.audio import (
     is_clipped,
     is_silent,
     peak_db,
-    rms_db
+    rms_db,
+    spectral_rolloff
 )
 
 
@@ -244,14 +245,32 @@ def _audio_file_repr_from_dict(
         db_repr = "- dBrms".rjust(16) + " " + "- dBpeak".rjust(16)
     
     else:
-        db_repr = " ".join(
-            [
-                f"{r:.1f}dBrms:{idx}".rjust(16)
-                + f"{p:.1f}dBpeak:{idx}".rjust(16)
-                for idx, (r, p)
-                in enumerate(zip(data["rms_db"], data["peak_db"]))
-            ]
-        )
+        if "spectral_rolloff" in data:
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    + f"{s / 1000.0:.1f}kHz:{idx}".rjust(12)
+                    for idx, (r, p, s)
+                    in enumerate(
+                        zip(
+                            data["rms_db"],
+                            data["peak_db"],
+                            data["spectral_rolloff"]
+                        )
+                    )
+                ]
+            )
+        
+        else:
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    for idx, (r, p)
+                    in enumerate(zip(data["rms_db"], data["peak_db"]))
+                ]
+            )
 
     # Assemble representation
     repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr} {db_repr}"
@@ -615,11 +634,19 @@ def sndls(args: Namespace) -> None:
         or args.csv
         or args.filter
         or args.select 
+        or args.spectral_rolloff
     ):
         exit_error(
             "--meta not allowed with: --sha256, --sha256-short, --csv, "
-            "--filter or --select"
+            "--filter, --select, --spectral-rolloff"
         )
+    
+    # Check spectral-rolloff if enabled
+    if (
+        args.spectral_rolloff is not None
+        and (args.spectral_rolloff > 1.0 or args.spectral_rolloff < 0.0)
+    ):
+        exit_error("--spectral-rolloff should be a value between 0.0 and 1.0")
     
     # Check csv does not exist already if it should be written
     if args.csv and os.path.isfile(args.csv) and not args.csv_overwrite:
@@ -793,6 +820,9 @@ def sndls(args: Namespace) -> None:
             "is_invalid"
         ]
 
+        if args.spectral_rolloff:
+            cols.insert(-4, "spectral_rolloff")
+
         # Optional fields
         if args.sha256 or args.sha256_short:
             cols.insert(1, "sha256")
@@ -858,7 +888,7 @@ def sndls(args: Namespace) -> None:
             # Update audio stats
             if args.skip_invalid_files:
                 try:
-                    audio, _ = read_audio(file, dtype=args.dtype)
+                    audio, fs = read_audio(file, dtype=args.dtype)
                     audio_peak_db = flatten_nested_list(
                         peak_db(audio, axis=-1).tolist()
                     )
@@ -889,12 +919,27 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_silent"] = False
                     audio_meta["is_invalid"] = True
 
+                    if args.spectral_rolloff is not None:
+                        audio_meta["spectral_rolloff"] = flatten_nested_list(
+                                np.mean(
+                                spectral_rolloff(
+                                    audio,
+                                    fs,
+                                    args.fft_size,
+                                    args.hop_size,
+                                    rolloff=args.spectral_rolloff
+                                ),
+                                axis=-1,
+                                keepdims=True
+                            ).tolist()
+                        )
+
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
             
             else:
                 try:
-                    audio, _ = read_audio(file, dtype=args.dtype)
+                    audio, fs = read_audio(file, dtype=args.dtype)
                     audio_peak_db = flatten_nested_list(
                         peak_db(audio, axis=-1).tolist()
                     )
@@ -909,6 +954,21 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_clipped"] = audio_is_clipped
                     audio_meta["is_anomalous"] = audio_is_anomalous
                     audio_meta["is_silent"] = audio_is_silent
+
+                    if args.spectral_rolloff is not None:
+                        audio_meta["spectral_rolloff"] = flatten_nested_list(
+                                np.mean(
+                                spectral_rolloff(
+                                    audio,
+                                    fs,
+                                    args.fft_size,
+                                    args.hop_size,
+                                    rolloff=args.spectral_rolloff
+                                ),
+                                axis=-1,
+                                keepdims=True
+                            ).tolist()
+                        )
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
@@ -1019,7 +1079,7 @@ def sndls(args: Namespace) -> None:
             
             if audio_meta["is_invalid"]:
                 glob_stats["invalid_files"] += 1
-        
+            
     # Get elapsed time
     elapsed_time = perf_counter() - start_time
 

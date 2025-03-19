@@ -96,6 +96,28 @@ def get_parser() -> argparse.Namespace:
              "is considered silent"
     )
     parser.add_argument(
+        "--fft-size",
+        type=int,
+        choices=[2048, 1024, 512],
+        default=2048,
+        help="fft size for frequency spectrum"
+    )
+    parser.add_argument(
+        "--hop-size",
+        type=int,
+        choices=[512, 256, 128],
+        default=512,
+        help="hop size for frame shifts"
+    )
+    parser.add_argument(
+        "--spectral-rolloff",
+        type=float,
+        help=(
+            "computes the mean spectral rolloff in hertz for a given "
+            "cumulative energy percentage between 0.0 and 1.0"
+        )
+    )
+    parser.add_argument(
         "-p", "--post-action",
         choices=["cp", "mv", "rm", "mv+sp", "cp+sp"],
         help=(
