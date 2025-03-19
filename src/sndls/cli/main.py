@@ -100,14 +100,14 @@ def get_parser() -> argparse.Namespace:
         type=int,
         choices=[2048, 1024, 512],
         default=2048,
-        help="fft size for frequency spectrum"
+        help="fft size for spectral analysis"
     )
     parser.add_argument(
         "--hop-size",
         type=int,
         choices=[512, 256, 128],
         default=512,
-        help="hop size for frame shifts"
+        help="hop size used for spectral analysis"
     )
     parser.add_argument(
         "--spectral-rolloff",
