@@ -245,28 +245,11 @@ def _audio_file_repr_from_dict(
         db_repr = "- dBrms".rjust(16) + " " + "- dBpeak".rjust(16)
     
     else:
-        if "spectral_rolloff" in data:
-            db_repr = " ".join(
-                [
-                    f"{r:.1f}dBrms:{idx}".rjust(16)
-                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
-                    + f"{s / 1000.0:.1f}kHz:{idx}".rjust(12)
-                    for idx, (r, p, s)
-                    in enumerate(
-                        zip(
-                            data["rms_db"],
-                            data["peak_db"],
-                            data["spectral_rolloff"]
-                        )
-                    )
-                ]
-            )
-        
-        elif all(
+        if all(
             s in data
             for s in (
                 "spectral_rolloff_min",
-                "spectral_rolloff_average",
+                "spectral_rolloff",
                 "spectral_rolloff_max")
         ):
             db_repr = " ".join(
@@ -286,8 +269,25 @@ def _audio_file_repr_from_dict(
                             data["rms_db"],
                             data["peak_db"],
                             data["spectral_rolloff_min"],
-                            data["spectral_rolloff_average"],
+                            data["spectral_rolloff"],
                             data["spectral_rolloff_max"]
+                        )
+                    )
+                ]
+            )
+
+        elif "spectral_rolloff" in data:
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    + f"{s / 1000.0:.1f}kHz:{idx}".rjust(12)
+                    for idx, (r, p, s)
+                    in enumerate(
+                        zip(
+                            data["rms_db"],
+                            data["peak_db"],
+                            data["spectral_rolloff"]
                         )
                     )
                 ]
@@ -855,7 +855,7 @@ def sndls(args: Namespace) -> None:
             if args.spectral_rolloff_detail:
                 for c in (
                     "spectral_rolloff_min",
-                    "spectral_rolloff_average",
+                    "spectral_rolloff",
                     "spectral_rolloff_max"
                 ):
                     cols.insert(-4, c)
@@ -998,7 +998,7 @@ def sndls(args: Namespace) -> None:
                             audio_meta["spectral_rolloff_min"] = (
                                 _min_spectral_rolloff
                             )
-                            audio_meta["spectral_rolloff_average"] = (
+                            audio_meta["spectral_rolloff"] = (
                                 _average_spectral_rolloff
                             )
                             audio_meta["spectral_rolloff_max"] = (
@@ -1082,7 +1082,7 @@ def sndls(args: Namespace) -> None:
                             audio_meta["spectral_rolloff_min"] = (
                                 _min_spectral_rolloff
                             )
-                            audio_meta["spectral_rolloff_average"] = (
+                            audio_meta["spectral_rolloff"] = (
                                 _average_spectral_rolloff
                             )
                             audio_meta["spectral_rolloff_max"] = (

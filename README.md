@@ -256,7 +256,6 @@ Here is a list of all fields that can be used to refine your search:
 | `rms_db`                   | Per-channel root mean square value in decibels                                                               | `List[float]` |
 | `spectral_rolloff`         | Average spectral-rolloff in hertz (only available with `--spectral-rolloff`)                                 | `List[float]` |
 | `spectral_rolloff_min`     | Minimum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
-| `spectral_rolloff_avg`     | Average spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
 | `spectral_rolloff_max`     | Maximum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
 | `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS                                               | `bool`        |
 | `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range                                      | `bool`        |
