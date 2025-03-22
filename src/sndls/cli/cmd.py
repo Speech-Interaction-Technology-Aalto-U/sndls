@@ -262,6 +262,37 @@ def _audio_file_repr_from_dict(
                 ]
             )
         
+        elif all(
+            s in data
+            for s in (
+                "spectral_rolloff_min",
+                "spectral_rolloff_average",
+                "spectral_rolloff_max")
+        ):
+            db_repr = " ".join(
+                [
+                    f"{r:.1f}dBrms:{idx}".rjust(16)
+                    + f"{p:.1f}dBpeak:{idx}".rjust(16)
+                    + "  "
+                    + f"{s_min / 1000.0:.1f}".rjust(4) 
+                    + " ≤"
+                    + f"{s_avg / 1000.0:.1f}".rjust(4)
+                    + " ≤"
+                    + f"{s_max / 1000.0:.1f}".rjust(4)
+                    + f"kHz:{idx}".ljust(6)
+                    for idx, (r, p, s_min, s_avg, s_max)
+                    in enumerate(
+                        zip(
+                            data["rms_db"],
+                            data["peak_db"],
+                            data["spectral_rolloff_min"],
+                            data["spectral_rolloff_average"],
+                            data["spectral_rolloff_max"]
+                        )
+                    )
+                ]
+            )
+        
         else:
             db_repr = " ".join(
                 [
@@ -821,7 +852,16 @@ def sndls(args: Namespace) -> None:
         ]
 
         if args.spectral_rolloff:
-            cols.insert(-4, "spectral_rolloff")
+            if args.spectral_rolloff_detail:
+                for c in (
+                    "spectral_rolloff_min",
+                    "spectral_rolloff_average",
+                    "spectral_rolloff_max"
+                ):
+                    cols.insert(-4, c)
+            
+            else:
+                cols.insert(-4, "spectral_rolloff")
 
         # Optional fields
         if args.sha256 or args.sha256_short:
@@ -920,19 +960,67 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_invalid"] = True
 
                     if args.spectral_rolloff is not None:
-                        audio_meta["spectral_rolloff"] = flatten_nested_list(
-                                np.mean(
-                                spectral_rolloff(
-                                    audio,
-                                    fs,
-                                    args.fft_size,
-                                    args.hop_size,
-                                    rolloff=args.spectral_rolloff
-                                ),
-                                axis=-1,
-                                keepdims=True
-                            ).tolist()
-                        )
+                        if args.spectral_rolloff_detail:
+                            _spectral_rolloff = spectral_rolloff(
+                                audio,
+                                fs,
+                                args.fft_size,
+                                args.hop_size,
+                                rolloff=args.spectral_rolloff
+                            )
+                            _min_spectral_rolloff = flatten_nested_list(
+                                np.min(
+                                    _spectral_rolloff,
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            _max_spectral_rolloff = flatten_nested_list(
+                                    np.max(
+                                    _spectral_rolloff,
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            _average_spectral_rolloff = flatten_nested_list(
+                                    np.mean(
+                                    spectral_rolloff(
+                                        audio,
+                                        fs,
+                                        args.fft_size,
+                                        args.hop_size,
+                                        rolloff=args.spectral_rolloff
+                                    ),
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            audio_meta["spectral_rolloff_min"] = (
+                                _min_spectral_rolloff
+                            )
+                            audio_meta["spectral_rolloff_average"] = (
+                                _average_spectral_rolloff
+                            )
+                            audio_meta["spectral_rolloff_max"] = (
+                                _max_spectral_rolloff
+                            )
+                        
+                        else:
+                            audio_meta["spectral_rolloff"] = (
+                                    flatten_nested_list(
+                                        np.mean(
+                                        spectral_rolloff(
+                                            audio,
+                                            fs,
+                                            args.fft_size,
+                                            args.hop_size,
+                                            rolloff=args.spectral_rolloff
+                                        ),
+                                        axis=-1,
+                                        keepdims=True
+                                    ).tolist()
+                                )
+                            )
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
@@ -956,19 +1044,67 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_silent"] = audio_is_silent
 
                     if args.spectral_rolloff is not None:
-                        audio_meta["spectral_rolloff"] = flatten_nested_list(
-                                np.mean(
-                                spectral_rolloff(
-                                    audio,
-                                    fs,
-                                    args.fft_size,
-                                    args.hop_size,
-                                    rolloff=args.spectral_rolloff
-                                ),
-                                axis=-1,
-                                keepdims=True
-                            ).tolist()
-                        )
+                        if args.spectral_rolloff_detail:
+                            _spectral_rolloff = spectral_rolloff(
+                                audio,
+                                fs,
+                                args.fft_size,
+                                args.hop_size,
+                                rolloff=args.spectral_rolloff
+                            )
+                            _min_spectral_rolloff = flatten_nested_list(
+                                np.min(
+                                    _spectral_rolloff,
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            _max_spectral_rolloff = flatten_nested_list(
+                                    np.max(
+                                    _spectral_rolloff,
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            _average_spectral_rolloff = flatten_nested_list(
+                                    np.mean(
+                                    spectral_rolloff(
+                                        audio,
+                                        fs,
+                                        args.fft_size,
+                                        args.hop_size,
+                                        rolloff=args.spectral_rolloff
+                                    ),
+                                    axis=-1,
+                                    keepdims=True
+                                ).tolist()
+                            )
+                            audio_meta["spectral_rolloff_min"] = (
+                                _min_spectral_rolloff
+                            )
+                            audio_meta["spectral_rolloff_average"] = (
+                                _average_spectral_rolloff
+                            )
+                            audio_meta["spectral_rolloff_max"] = (
+                                _max_spectral_rolloff
+                            )
+                        
+                        else:
+                            audio_meta["spectral_rolloff"] = (
+                                    flatten_nested_list(
+                                        np.mean(
+                                        spectral_rolloff(
+                                            audio,
+                                            fs,
+                                            args.fft_size,
+                                            args.hop_size,
+                                            rolloff=args.spectral_rolloff
+                                        ),
+                                        axis=-1,
+                                        keepdims=True
+                                    ).tolist()
+                                )
+                            )
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)

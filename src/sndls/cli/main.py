@@ -118,6 +118,11 @@ def get_parser() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--spectral-rolloff-detail",
+        action="store_true",
+        help="shows spectral rollof in min ≤ mean ≤ max format"
+    )
+    parser.add_argument(
         "-p", "--post-action",
         choices=["cp", "mv", "rm", "mv+sp", "cp+sp"],
         help=(
