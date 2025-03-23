@@ -241,26 +241,28 @@ sndls /path/to/audio/dir --select "all(db > -3.0 for db in peak_db)"
 ```
 
 Here is a list of all fields that can be used to refine your search:
-| Field                      | Description                                                                  | Data type     |
-|----------------------------|------------------------------------------------------------------------------|---------------|
-| `file`                     | Audio file path                                                              | `str`         |
-| `filename`                 | Audio filename                                                               | `str`         |
-| `fs`                       | Audio sample rate in hertz (e.g. 16000, 48000)                               | `int`         |
-| `num_channels`             | Number of channels in the file                                               | `int`         |
-| `num_samples_per_channels` | Number of samples per channels                                               | `int`         |
-| `duration_seconds`         | Duration of the file in seconds                                              | `float`       |
-| `size_bytes`               | Size of the file in bytes                                                    | `int`         |
-| `fmt`                      | File format (`WAV`, `RF64`, etc)                                             | `str`         |
-| `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                              | `str`         |
-| `peak_db`                  | Per-channel peak value in decibels                                           | `List[float]` |
-| `rms_db`                   | Per-channel root mean square value in decibels                               | `List[float]` |
-| `spectral_rolloff`         | Spectral-rolloff in hertz (only available with `--spectral-rolloff`)         | `List[float]` |
-| `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS               | `bool`        |
-| `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range      | `bool`        |
-| `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                               | `bool`        |
-| `is_invalid`               | `True` if the file could not be read. Only valid with `--skip-invalid-files` | `bool`        |
-| `sha256`                   | SHA-256 hash (only available if `--sha256` or `--sha256-short` is enabled    | `str`         |
-| `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                      | `DataFrame`   |
+| Field                      | Description                                                                                                  | Data type     |
+|----------------------------|--------------------------------------------------------------------------------------------------------------|---------------|
+| `file`                     | Audio file path                                                                                              | `str`         |
+| `filename`                 | Audio filename                                                                                               | `str`         |
+| `fs`                       | Audio sample rate in hertz (e.g. 16000, 48000)                                                               | `int`         |
+| `num_channels`             | Number of channels in the file                                                                               | `int`         |
+| `num_samples_per_channels` | Number of samples per channels                                                                               | `int`         |
+| `duration_seconds`         | Duration of the file in seconds                                                                              | `float`       |
+| `size_bytes`               | Size of the file in bytes                                                                                    | `int`         |
+| `fmt`                      | File format (`WAV`, `RF64`, etc)                                                                             | `str`         |
+| `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                                                              | `str`         |
+| `peak_db`                  | Per-channel peak value in decibels                                                                           | `List[float]` |
+| `rms_db`                   | Per-channel root mean square value in decibels                                                               | `List[float]` |
+| `spectral_rolloff`         | Average spectral-rolloff in hertz (only available with `--spectral-rolloff`)                                 | `List[float]` |
+| `spectral_rolloff_min`     | Minimum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
+| `spectral_rolloff_max`     | Maximum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
+| `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS                                               | `bool`        |
+| `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range                                      | `bool`        |
+| `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                                                               | `bool`        |
+| `is_invalid`               | `True` if the file could not be read. Only valid with `--skip-invalid-files`                                 | `bool`        |
+| `sha256`                   | SHA-256 hash (only available if `--sha256` or `--sha256-short` is enabled                                    | `str`         |
+| `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                                                      | `DataFrame`   |
 
 ## Filtering by using preloaded files
 `sndls` provides a `--preload` option to load a `.csv`, `.tsv`, or `.txt` file that can be used with the `--filter` and `--select` options. This feature allows you to expand your search and filtering capabilities, such as matching files from a specific file or finding a particular set of SHA-256 hashes, etc. To preload a file, you can do the following:
