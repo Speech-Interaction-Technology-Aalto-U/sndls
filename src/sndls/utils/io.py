@@ -15,7 +15,8 @@ from .guards import is_file_or_error
 from .collections import make_list
 from .fmt import (
     _decorate_str,
-    exit_warning
+    exit_warning,
+    print_error
 )
 
 
@@ -160,7 +161,7 @@ def ask_confirmation(
 
         while str(user_input) not in ["y", "n"]:
             if user_input is not None:
-                print(f"<error>Invalid input '{user_input}'</error>")
+                print_error(f"Invalid input '{user_input}'")
 
             user_input = input(_decorate_str(s))
 
