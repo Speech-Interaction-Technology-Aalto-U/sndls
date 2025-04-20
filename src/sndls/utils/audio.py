@@ -191,19 +191,21 @@ def is_silent(
     Returns:
         bool: `True` if `x` is silent, `False` otherwise.
     """
-    if frame_size is not None and x.shape[axis] > frame_size:
+    if frame_size is not None:
         x = np.sum(x, axis=0)  # Monosum
         x_frames = frame_cutter(
             x,
-            frame_size=frame_size,
+            frame_size=(
+                frame_size if x.shape[axis] > frame_size else x.shape[axis]
+            ),
             hop_size=int(frame_size * hop_size)
         )
         db_rms = flatten_nested_list(rms_db(x_frames, axis=axis).tolist())
+        return any(block_db_rms < thresh_db for block_db_rms in db_rms)
 
     else:
         db_rms = flatten_nested_list(rms_db(x, axis=axis).tolist())
-
-    return all(block_db_rms < thresh_db for block_db_rms in db_rms)
+        return all(chl_db_rms < thresh_db for chl_db_rms in db_rms)
 
 
 def spectral_rolloff(
