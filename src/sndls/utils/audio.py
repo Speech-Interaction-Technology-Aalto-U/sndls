@@ -1,8 +1,32 @@
 import numpy as np
-from typing import Optional
+from typing import (
+    Optional,
+    Union
+)
 from scipy.signal import stft
+from numpy.lib.stride_tricks import sliding_window_view
 from .config import get_default_eps
 from .collections import flatten_nested_list
+from .exceptions import ShapeError
+
+
+def ms_to_samples(
+        ms: float,
+        fs: float,
+        truncate: bool = False
+) -> Union[int, float]:
+    """ Returns the amount of samples representing ``ms`` miliseconds.
+
+    Args:
+        ms (float): Number of miliseconds.
+        fs (float): Sample rate to convert miliseconds to samples.
+        truncate (bool): Truncates the returned value to the closest ``int``.
+
+    Returns:
+        The amount of samples representing ``ms`` miliseconds.
+    """
+    samples = (ms * fs) / 1000.0
+    return int(samples) if truncate else samples
 
 
 def amp_to_db(x: np.ndarray, eps: float = get_default_eps()) -> np.ndarray:
@@ -82,7 +106,7 @@ def rms(x: np.ndarray, axis: int = -1) -> np.ndarray:
 
 
 def rms_db(x: np.ndarray, axis: int = -1) -> np.ndarray: 
-    """ Returns the root mean square level of a `np.ndarray` in decibel scale.
+    """Returns the root mean square level of a `np.ndarray` in decibel scale.
     
     Args:
         x (np.ndarray): Input audio data.
@@ -92,6 +116,21 @@ def rms_db(x: np.ndarray, axis: int = -1) -> np.ndarray:
         np.ndarray: Array containing the root mean square level in decibels.
     """
     return amp_to_db(rms(x, axis=axis))
+
+
+def frame_cutter(x: np.ndarray, frame_size: int, hop_size: int) -> np.ndarray:
+    """
+    Cuts an input array into frames of a specified size with a given hop size.
+
+    Args:
+        x (np.ndarray): Input array.
+        frame_size (int): Size of each frame.
+        hop_size (int): Number of samples between adjacent frames.
+
+    Returns:
+        np.ndarray: Array of frames.
+    """
+    return sliding_window_view(x, frame_size)[::hop_size]
 
 
 def is_clipped(x: np.ndarray, min: float = -1.0, max: float = 1.0) -> bool:
@@ -128,7 +167,14 @@ def is_anomalous(x: np.ndarray) -> bool:
     )
     return bool(result)
 
-def is_silent(x: np.ndarray, thresh_db: float = -80.0, axis: int = -1) -> bool:
+
+def is_silent(
+        x: np.ndarray,
+        thresh_db: float = -80.0,
+        frame_size: Optional[int] = None,
+        hop_size: float = 0.5,
+        axis: int = -1
+) -> bool:
     """Returns `True` if a `np.ndarray` containing audio data is silent. That
     is, the root mean square level of the files in decibels is below a certain
     threshold.
@@ -137,14 +183,27 @@ def is_silent(x: np.ndarray, thresh_db: float = -80.0, axis: int = -1) -> bool:
         x (np.ndarray): Input audio data.
         thresh_db (float): Minimum threshold below which a file is considered
             silent.
+        frame_size (Optional[int]): If given, the root mean square level is
+            computed per frame.
         axis (int): Axis along which the root mean square level in decibels is
             computed and contrasted again the given threshold in decibels.
     
     Returns:
         bool: `True` if `x` is silent, `False` otherwise.
     """
-    db_rms = flatten_nested_list(rms_db(x, axis=axis).tolist())
-    return all(chl_db_rms < thresh_db for chl_db_rms in db_rms)
+    if frame_size is not None and x.shape[axis] > frame_size:
+        x = np.sum(x, axis=0)  # Monosum
+        x_frames = frame_cutter(
+            x,
+            frame_size=frame_size,
+            hop_size=int(frame_size * hop_size)
+        )
+        db_rms = flatten_nested_list(rms_db(x_frames, axis=axis).tolist())
+
+    else:
+        db_rms = flatten_nested_list(rms_db(x, axis=axis).tolist())
+
+    return all(block_db_rms < thresh_db for block_db_rms in db_rms)
 
 
 def spectral_rolloff(
