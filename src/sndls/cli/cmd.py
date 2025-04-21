@@ -34,6 +34,7 @@ from ..utils.fmt import (
 from ..utils.guards import is_file_with_ext
 from ..utils.hash import generate_sha256_from_file
 from ..utils.audio import (
+    ms_to_samples,
     is_anomalous,
     is_clipped,
     is_silent,
@@ -678,7 +679,7 @@ def sndls(args: Namespace) -> None:
         and (args.spectral_rolloff > 1.0 or args.spectral_rolloff < 0.0)
     ):
         exit_error("--spectral-rolloff should be a value between 0.0 and 1.0")
-    
+
     # Check csv does not exist already if it should be written
     if args.csv and os.path.isfile(args.csv) and not args.csv_overwrite:
         exit_error(
@@ -813,6 +814,13 @@ def sndls(args: Namespace) -> None:
             "--post-action-preserve-subfolders can only be used if --recursive"
             " is enabled"
         )
+    
+    # Check
+    if args.silent_hop_size <= 0.0 or args.silent_hop_size > 1.0:
+        exit_error(
+            "--silent-hop-size must be greater than 0.0 and less than or equal"
+            " to 1.0"
+        )
 
     # Global stats to collect
     glob_stats = {
@@ -924,7 +932,7 @@ def sndls(args: Namespace) -> None:
             if audio_meta["duration_seconds"] > args.max_duration:
                 glob_stats["skipped_files"] += 1
                 continue
-
+            
             # Update audio stats
             if args.skip_invalid_files:
                 try:
@@ -937,7 +945,20 @@ def sndls(args: Namespace) -> None:
                     )
                     audio_is_clipped = is_clipped(audio)
                     audio_is_anomalous = is_anomalous(audio)
-                    audio_is_silent = is_silent(audio)
+                    silent_frame_size_samples = (
+                        ms_to_samples(
+                            args.silent_frame_size_ms,
+                            fs=fs,
+                            truncate=True
+                        )
+                        if args.silent_frame_size_ms is not None else None
+                    )
+                    audio_is_silent = is_silent(
+                        x=audio,
+                        thresh_db=args.silent_thresh,
+                        frame_size=silent_frame_size_samples,
+                        axis=-1
+                    )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db
                     audio_meta["is_clipped"] = audio_is_clipped
@@ -1036,7 +1057,20 @@ def sndls(args: Namespace) -> None:
                     )
                     audio_is_clipped = is_clipped(audio)
                     audio_is_anomalous = is_anomalous(audio)
-                    audio_is_silent = is_silent(audio)
+                    silent_frame_size_samples = (
+                        ms_to_samples(
+                            args.silent_frame_size_ms,
+                            fs=fs,
+                            truncate=True
+                        )
+                        if args.silent_frame_size_ms is not None else None
+                    )
+                    audio_is_silent = is_silent(
+                        x=audio,
+                        thresh_db=args.silent_thresh,
+                        frame_size=silent_frame_size_samples,
+                        axis=-1
+                    )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db
                     audio_meta["is_clipped"] = audio_is_clipped

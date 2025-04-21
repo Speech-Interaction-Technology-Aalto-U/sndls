@@ -96,6 +96,25 @@ def get_parser() -> argparse.Namespace:
              "is considered silent"
     )
     parser.add_argument(
+        "--silent-frame-size-ms",
+        type=float,
+        help=(
+            "if set, the root mean square (RMS) level for determining file "
+            "silence is computed per frame, with frame size given in "
+            "milliseconds"
+        )
+    )
+    parser.add_argument(
+        "--silent-hop-size",
+        type=float,
+        default=0.5,
+        help=(
+            "percentage of --silent-frame-size-ms used as hop size for "
+            "framewise calculations (only used if --silent-frame-size-ms is "
+            "enabled)"
+        )
+    )
+    parser.add_argument(
         "--fft-size",
         type=int,
         choices=[2048, 1024, 512],

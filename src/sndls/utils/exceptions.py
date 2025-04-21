@@ -5,3 +5,7 @@ class FileExtensionError(Exception):
 
 class FolderNotFoundError(Exception):
     pass
+
+
+class ShapeError(Exception):
+    pass
