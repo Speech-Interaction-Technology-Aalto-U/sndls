@@ -957,6 +957,7 @@ def sndls(args: Namespace) -> None:
                         x=audio,
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
+                        hop_size=args.silent_hop_size,
                         axis=-1
                     )
                     audio_meta["peak_db"] = audio_peak_db
@@ -1069,6 +1070,7 @@ def sndls(args: Namespace) -> None:
                         x=audio,
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
+                        hop_size=args.silent_hop_size,
                         axis=-1
                     )
                     audio_meta["peak_db"] = audio_peak_db
