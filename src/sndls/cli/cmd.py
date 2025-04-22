@@ -1368,7 +1368,7 @@ def sndls(args: Namespace) -> None:
         "Total size:".ljust(22) + bytes_to_str(glob_stats['total_size_bytes']),
     )
     print("")
-    print(f"Elapsed time: {time_to_str(elapsed_time, abbrev=True)}")
+    print(f"Elapsed time: {time_to_str(elapsed_time, abbrev=False)}")
 
     # Perform --post-action if any
     if args.post_action:
