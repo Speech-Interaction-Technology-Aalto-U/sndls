@@ -88,7 +88,8 @@ def _matches_filter(
 def _preload_file(
         file: str,
         has_header: bool = False,
-        truncate_ragged_lines: bool = False
+        truncate_ragged_lines: bool = False,
+        ignore_errors: bool = False
 ) -> pl.DataFrame:
     """Preloads a file in memory to be used with --filter/--select option.
     
@@ -120,7 +121,8 @@ def _preload_file(
             file,
             separator=separator,
             has_header=has_header,
-            truncate_ragged_lines=truncate_ragged_lines
+            truncate_ragged_lines=truncate_ragged_lines,
+            ignore_errors=ignore_errors
         )
         
     except pl.exceptions.ComputeError as e:
@@ -699,7 +701,8 @@ def sndls(args: Namespace) -> None:
         preload = _preload_file(
             file=args.preload,
             has_header=args.preload_has_header,
-            truncate_ragged_lines=args.preload_truncate_ragged_lines
+            truncate_ragged_lines=args.preload_truncate_ragged_lines,
+            ignore_errors=args.csv_ignore_errors
         )
     
     else:
@@ -711,7 +714,7 @@ def sndls(args: Namespace) -> None:
     
     elif is_file_with_ext(file=args.input, ext=".csv"):
         # Read file and check if the col column exists
-        df = pl.read_csv(args.input)
+        df = pl.read_csv(args.input, ignore_errors=args.csv_ignore_errors)
 
         if args.csv_input_file_col not in df.columns:
             exit_error(

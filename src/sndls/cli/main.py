@@ -189,6 +189,11 @@ def get_parser() -> argparse.Namespace:
         help="name of the column containing files if the input is a .csv file"
     )
     parser.add_argument(
+        "--csv-ignore-errors",
+        action="store_true",
+        help="skip rows with errors when reading .csv files"
+    )
+    parser.add_argument(
         "--max-duration",
         type=float,
         default=60 * 60 * 3,
