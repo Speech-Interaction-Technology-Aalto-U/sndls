@@ -105,6 +105,15 @@ def get_parser() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--silent-frame-mode",
+        choices=["all", "any", "mean", "median", "max"],
+        default="any",
+        help=(
+            "method to flag silence from frame root mean square (RMS) level: "
+            "'any', 'all', 'mean', 'median', or 'max'"
+        )
+    )
+    parser.add_argument(
         "--silent-hop-size",
         type=float,
         default=0.5,

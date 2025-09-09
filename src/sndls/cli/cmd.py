@@ -180,7 +180,7 @@ def _audio_file_meta_repr_from_dict(data: dict, max_fname_chars: int) -> str:
     data_fmt = "-" if data["fmt"] is None else data["fmt"]
     data_subtype = "-" if data["subtype"] is None else data["subtype"]
 
-    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(14)
+    fmt_repr = data_fmt.ljust(6) + " " + data_subtype.ljust(14)
 
     # Assemble representation
     repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr}"
@@ -241,7 +241,7 @@ def _audio_file_repr_from_dict(
     data_fmt = "-" if data["fmt"] is None else data["fmt"]
     data_subtype = "-" if data["subtype"] is None else data["subtype"]
 
-    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(14)
+    fmt_repr = data_fmt.ljust(6) + " " + data_subtype.ljust(14)
 
     # Audio stats repr
     if data["is_invalid"]:
@@ -961,7 +961,8 @@ def sndls(args: Namespace) -> None:
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
                         hop_size=args.silent_hop_size,
-                        axis=-1
+                        axis=-1,
+                        mode=args.silent_frame_mode
                     )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db
@@ -1074,7 +1075,8 @@ def sndls(args: Namespace) -> None:
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
                         hop_size=args.silent_hop_size,
-                        axis=-1
+                        axis=-1,
+                        mode=args.silent_frame_mode
                     )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db
