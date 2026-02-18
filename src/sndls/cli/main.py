@@ -152,7 +152,7 @@ def get_parser() -> argparse.Namespace:
     )
     parser.add_argument(
         "-p", "--post-action",
-        choices=["cp", "mv", "rm", "mv+sp", "cp+sp", "dump"],
+        choices=["cp", "mv", "rm", "mv+sp", "cp+sp", "dump", "dump+sp"],
         help=(
             "action to execute after listing all files (cp=copy, mv=move, "
             "rm=remove, sp=split, dump=dump to file)"
@@ -163,7 +163,7 @@ def get_parser() -> argparse.Namespace:
         type=str,
         help=(
             "post action output (required for --post-action "
-            "{cp,mv,cp+sp,mv+sp, dump})"
+            "{cp,mv,cp+sp,mv+sp, dump, dump+sp})"
         )
     )
     parser.add_argument(

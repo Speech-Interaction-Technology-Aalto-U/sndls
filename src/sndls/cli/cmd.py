@@ -644,37 +644,54 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
         )
 
     elif args.post_action == "dump":
-        if args.post_action_num_splits:
-            if args.post_action_num_splits > len(files):
-                exit_error(
-                    "--post-action-num-splits should be equal or smaller than "
-                    "the number of files"
-                )
-            
-            splits = np.array_split(files, args.post_action_num_splits)
-            zfill = len(str(len(splits)))
+        print(
+            f"\n{len(files)} file path(s) will be dumped to "
+            f"'{args.post_action_output}'"
+        )
 
-            for split_idx, split in enumerate(splits):
-                filename, ext = os.path.splitext(args.post_action_output)
-                filename += f"_{str(split_idx).zfill(zfill)}{ext}"
+        if not args.unattended:
+            ask_confirmation()
 
-                with open(filename, "w") as f:
-                    f.write("\n".join(split))
-            
-            split_file_repr, ext = os.path.splitext(args.post_action_output)
-            split_file_repr += f"_*{ext}"
-            print(
-                f"\n{len(files)} file(s) dumped to "
-                f"{args.post_action_num_splits} file(s) '{split_file_repr}'"
+        with open(args.post_action_output, "w") as f:
+            f.write("\n".join(files))
+        
+        print(
+            f"\n{len(files)} file path(s) dumped to "
+            f"'{args.post_action_output}'"
+        )
+
+    elif args.post_action == "dump+sp":
+        if args.post_action_num_splits > len(files):
+            exit_error(
+                "--post-action-num-splits should be equal or smaller than "
+                "the number of files"
             )
+        
+        split_file_repr, ext = os.path.splitext(args.post_action_output)
+        split_file_repr += f"_*{ext}"
+        
+        print(
+            f"\n{len(files)} file path(s) will be dumped to "
+            f"{args.post_action_num_splits} file(s) '{split_file_repr}'"
+        )
 
-        else:
-            with open(args.post_action_output, "w") as f:
-                f.write("\n".join(files))
-            
-            print(
-                f"\n{len(files)} file(s) dumped to '{args.post_action_output}'"
-            )
+        if not args.unattended:
+            ask_confirmation()
+        
+        splits = np.array_split(files, args.post_action_num_splits)
+        zfill = len(str(len(splits)))
+
+        for split_idx, split in enumerate(splits):
+            filename, ext = os.path.splitext(args.post_action_output)
+            filename += f"_{str(split_idx).zfill(zfill)}{ext}"
+
+            with open(filename, "w") as f:
+                f.write("\n".join(split))
+         
+        print(
+            f"\n{len(files)} file(s) dumped to "
+            f"{args.post_action_num_splits} file(s) '{split_file_repr}'"
+        )
 
     else:
         raise AssertionError
@@ -834,12 +851,19 @@ def sndls(args: Namespace) -> None:
     # Collect target files if --post-action
     if args.post_action:
         if (
-            args.post_action in ("cp", "mv", "cp+sp", "mv+sp", "dump")
+            args.post_action in (
+                "cp",
+                "mv",
+                "cp+sp",
+                "mv+sp",
+                "dump",
+                "dump+sp"
+            )
             and args.post_action_output is None
         ):
             exit_error(
                 "--post-action-output must be defined if --post-action is one "
-                "of cp, mv, cp+sp or mv+sp, dump"
+                "of cp, mv, cp+sp, mv+sp, dump or dump+sp"
             )
         
         post_action_files = []
