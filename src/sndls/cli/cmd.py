@@ -88,7 +88,8 @@ def _matches_filter(
 def _preload_file(
         file: str,
         has_header: bool = False,
-        truncate_ragged_lines: bool = False
+        truncate_ragged_lines: bool = False,
+        ignore_errors: bool = False
 ) -> pl.DataFrame:
     """Preloads a file in memory to be used with --filter/--select option.
     
@@ -120,7 +121,8 @@ def _preload_file(
             file,
             separator=separator,
             has_header=has_header,
-            truncate_ragged_lines=truncate_ragged_lines
+            truncate_ragged_lines=truncate_ragged_lines,
+            ignore_errors=ignore_errors
         )
         
     except pl.exceptions.ComputeError as e:
@@ -178,7 +180,7 @@ def _audio_file_meta_repr_from_dict(data: dict, max_fname_chars: int) -> str:
     data_fmt = "-" if data["fmt"] is None else data["fmt"]
     data_subtype = "-" if data["subtype"] is None else data["subtype"]
 
-    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(14)
+    fmt_repr = data_fmt.ljust(6) + " " + data_subtype.ljust(14)
 
     # Assemble representation
     repr = f"{filename_repr} {mem_repr} {fmt_repr} {len_repr}"
@@ -239,7 +241,7 @@ def _audio_file_repr_from_dict(
     data_fmt = "-" if data["fmt"] is None else data["fmt"]
     data_subtype = "-" if data["subtype"] is None else data["subtype"]
 
-    fmt_repr = data_fmt.ljust(4) + " " + data_subtype.ljust(14)
+    fmt_repr = data_fmt.ljust(6) + " " + data_subtype.ljust(14)
 
     # Audio stats repr
     if data["is_invalid"]:
@@ -641,6 +643,56 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
            f"'{args.post_action_output}'"
         )
 
+    elif args.post_action == "dump":
+        print(
+            f"\n{len(files)} file path(s) will be dumped to "
+            f"'{args.post_action_output}'"
+        )
+
+        if not args.unattended:
+            ask_confirmation()
+
+        with open(args.post_action_output, "w") as f:
+            f.write("\n".join(files))
+        
+        print(
+            f"\n{len(files)} file path(s) dumped to "
+            f"'{args.post_action_output}'"
+        )
+
+    elif args.post_action == "dump+sp":
+        if args.post_action_num_splits > len(files):
+            exit_error(
+                "--post-action-num-splits should be equal or smaller than "
+                "the number of files"
+            )
+        
+        split_file_repr, ext = os.path.splitext(args.post_action_output)
+        split_file_repr += f"_*{ext}"
+        
+        print(
+            f"\n{len(files)} file path(s) will be dumped to "
+            f"{args.post_action_num_splits} file(s) '{split_file_repr}'"
+        )
+
+        if not args.unattended:
+            ask_confirmation()
+        
+        splits = np.array_split(files, args.post_action_num_splits)
+        zfill = len(str(len(splits)))
+
+        for split_idx, split in enumerate(splits):
+            filename, ext = os.path.splitext(args.post_action_output)
+            filename += f"_{str(split_idx).zfill(zfill)}{ext}"
+
+            with open(filename, "w") as f:
+                f.write("\n".join(split))
+         
+        print(
+            f"\n{len(files)} file(s) dumped to "
+            f"{args.post_action_num_splits} file(s) '{split_file_repr}'"
+        )
+
     else:
         raise AssertionError
 
@@ -699,7 +751,8 @@ def sndls(args: Namespace) -> None:
         preload = _preload_file(
             file=args.preload,
             has_header=args.preload_has_header,
-            truncate_ragged_lines=args.preload_truncate_ragged_lines
+            truncate_ragged_lines=args.preload_truncate_ragged_lines,
+            ignore_errors=args.csv_ignore_errors
         )
     
     else:
@@ -711,7 +764,7 @@ def sndls(args: Namespace) -> None:
     
     elif is_file_with_ext(file=args.input, ext=".csv"):
         # Read file and check if the col column exists
-        df = pl.read_csv(args.input)
+        df = pl.read_csv(args.input, ignore_errors=args.csv_ignore_errors)
 
         if args.csv_input_file_col not in df.columns:
             exit_error(
@@ -798,16 +851,23 @@ def sndls(args: Namespace) -> None:
     # Collect target files if --post-action
     if args.post_action:
         if (
-            args.post_action in ("cp", "mv", "cp+sp", "mv+sp")
+            args.post_action in (
+                "cp",
+                "mv",
+                "cp+sp",
+                "mv+sp",
+                "dump",
+                "dump+sp"
+            )
             and args.post_action_output is None
         ):
             exit_error(
                 "--post-action-output must be defined if --post-action is one "
-                "of cp, mv, cp+sp or mv+sp"
+                "of cp, mv, cp+sp, mv+sp, dump or dump+sp"
             )
         
         post_action_files = []
-
+    
     # Check --post-action-preserve-subfolders is enabled with --recursive
     if args.post_action_preserve_subfolders and not args.recursive:
         exit_error(
@@ -958,7 +1018,8 @@ def sndls(args: Namespace) -> None:
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
                         hop_size=args.silent_hop_size,
-                        axis=-1
+                        axis=-1,
+                        mode=args.silent_frame_mode
                     )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db
@@ -1071,7 +1132,8 @@ def sndls(args: Namespace) -> None:
                         thresh_db=args.silent_thresh,
                         frame_size=silent_frame_size_samples,
                         hop_size=args.silent_hop_size,
-                        axis=-1
+                        axis=-1,
+                        mode=args.silent_frame_mode
                     )
                     audio_meta["peak_db"] = audio_peak_db
                     audio_meta["rms_db"] = audio_rms_db

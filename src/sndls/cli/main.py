@@ -105,6 +105,15 @@ def get_parser() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--silent-frame-mode",
+        choices=["all", "any", "mean", "median", "max"],
+        default="any",
+        help=(
+            "method to flag silence from frame root mean square (RMS) level: "
+            "'any', 'all', 'mean', 'median', or 'max'"
+        )
+    )
+    parser.add_argument(
         "--silent-hop-size",
         type=float,
         default=0.5,
@@ -143,10 +152,10 @@ def get_parser() -> argparse.Namespace:
     )
     parser.add_argument(
         "-p", "--post-action",
-        choices=["cp", "mv", "rm", "mv+sp", "cp+sp"],
+        choices=["cp", "mv", "rm", "mv+sp", "cp+sp", "dump", "dump+sp"],
         help=(
             "action to execute after listing all files (cp=copy, mv=move, "
-            "rm=remove, sp=split)"
+            "rm=remove, sp=split, dump=dump to file)"
         )
     )
     parser.add_argument(
@@ -154,7 +163,7 @@ def get_parser() -> argparse.Namespace:
         type=str,
         help=(
             "post action output (required for --post-action "
-            "{cp,mv,cp+sp,mv+sp})"
+            "{cp,mv,cp+sp,mv+sp, dump, dump+sp})"
         )
     )
     parser.add_argument(
@@ -168,7 +177,8 @@ def get_parser() -> argparse.Namespace:
     parser.add_argument(
         "--post-action-num-splits",
         type=int,
-        help="number of partitions (required for --post-action {cp+sp,mv+sp})"
+        help="number of partitions (required for --post-action {cp+sp,mv+sp}, "
+             "optional for --post-action {dump})"
     )
     parser.add_argument(
         "--post-action-split-dirname",
@@ -187,6 +197,11 @@ def get_parser() -> argparse.Namespace:
         type=str,
         default="file",
         help="name of the column containing files if the input is a .csv file"
+    )
+    parser.add_argument(
+        "--csv-ignore-errors",
+        action="store_true",
+        help="skip rows with errors when reading .csv files"
     )
     parser.add_argument(
         "--max-duration",
