@@ -822,12 +822,12 @@ def sndls(args: Namespace) -> None:
 
     # Check splits are provided
     if (
-        args.post_action in ("mv+sp", "cp+sp")
+        args.post_action in ("mv+sp", "cp+sp", "dump+sp")
         and args.post_action_num_splits is None
     ):
         exit_error(
             "--post-action-num-splits must be defined if --post-action is "
-            "mv+sp or cp+sp"
+            "mv+sp, cp+sp or dump+sp"
         )
     
     # Sample files if --sample is enabled
