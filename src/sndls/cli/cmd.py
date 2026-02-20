@@ -1242,10 +1242,6 @@ def sndls(args: Namespace) -> None:
                 )
                 print(file_repr, writer=tqdm)
 
-            # Collect files for --post-action if any 
-            if args.post_action:
-                post_action_files.append(file)
-        
         else:
             # Format current file representation
             if not args.summary:
@@ -1254,6 +1250,10 @@ def sndls(args: Namespace) -> None:
                     args.max_fname_chars
                 )
                 print(file_repr, writer=tqdm)
+            
+        # Collect files for --post-action if any 
+        if args.post_action:
+            post_action_files.append(file)
         
         # Write data to csv
         if args.csv:
