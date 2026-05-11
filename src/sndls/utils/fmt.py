@@ -1,6 +1,5 @@
 import sys
 from tqdm import tqdm
-from typing import Optional
 from .config import (
     _get_text_color_tags,
     _get_text_decorator_tags
@@ -26,12 +25,12 @@ def _decorate_str(s: str) -> str:
     return s
 
 
-def printc(s: str, writer: Optional[tqdm] = None) -> None:
+def printc(s: str, writer: tqdm | None = None) -> None:
     """Prints a formatted string.
 
     Args:
         s (str): The string to print.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     return (
         print(_decorate_str(s)) if writer is None
@@ -39,62 +38,58 @@ def printc(s: str, writer: Optional[tqdm] = None) -> None:
     )
 
 
-def printc_exit(
-        s: str,
-        code: int = 0,
-        writer: Optional[tqdm] = None
-) -> None:
+def printc_exit(s: str, code: int = 0, writer: tqdm | None = None) -> None:
     """Prints a formatted string and exits the program with a specified exit
     code.
 
     Args:
         s (str): The string to print.
         code (int): Exit code.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     printc(s=s, writer=writer)
     sys.exit(code)
 
 
-def print_error(s: str, writer: Optional[tqdm] = None) -> None:
+def print_error(s: str, writer: tqdm | None = None) -> None:
     """Prints an error.
     
     Args:
         s (str): Error message print.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     printc(f"<error>{s}</error>", writer=writer)
 
 
-def print_warning(s: str, writer: Optional[tqdm] = None) -> None:
+def print_warning(s: str, writer: tqdm | None = None) -> None:
     """Prints a warning.
     
     Args:
         s (str): Warning message to print.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     printc(f"<warning>{s}</warning>", writer=writer)
 
 
-def exit_error(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
+def exit_error(s: str, code: int = 1, writer: tqdm = None) -> None:
     """Prints an error and stops the execution of the program.
     
     Args:
         s (str): Error message to print.
         code (int): Exit code.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     print_error(s, writer=writer)
     sys.exit(code)
 
 
-def exit_warning(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
+def exit_warning(s: str, code: int = 1, writer: tqdm | None = None) -> None:
     """Prints a warning and stops the execution of the program.
 
     Args:
         s (str): Warning message to print.
         code (int): Exit code.
-        writer (Optional[tqdm]): Writer to use.
+        writer (tqdm): Writer to use.
     """
     print_warning(s, writer=writer)
     sys.exit(code)

@@ -1,19 +1,11 @@
 import numpy as np
-from typing import (
-    Optional,
-    Union
-)
 from scipy.signal import stft
 from numpy.lib.stride_tricks import sliding_window_view
 from .config import get_default_eps
 
 
-def ms_to_samples(
-        ms: float,
-        fs: float,
-        truncate: bool = False
-) -> Union[int, float]:
-    """ Returns the amount of samples representing ``ms`` miliseconds.
+def ms_to_samples(ms: float, fs: float, truncate: bool = False) -> int | float:
+    """Returns the amount of samples representing `ms` miliseconds.
 
     Args:
         ms (float): Number of miliseconds.
@@ -40,13 +32,13 @@ def amp_to_db(x: np.ndarray, eps: float = get_default_eps()) -> np.ndarray:
     return 20.0 * np.log10(np.clip(x, a_min=eps, a_max=None))
 
 
-def db_to_amp(x: np.ndarray, min: Optional[float] = None) -> np.ndarray:
+def db_to_amp(x: np.ndarray, min: float | None = None) -> np.ndarray:
     """Transforms decibel values to amplitude values.
     
     Args:
         x (np.ndarray): Array containing decibel values.
-        min (Optional[float]): Minimum decibel value. Values below this
-            threshold will be replaced by 0.0 to eliminate denormals.
+        min (float | None): Minimum decibel value. Values below this threshold
+            will be replaced by 0.0 to eliminate denormals.
     
     Returns:
         np.ndarray: Array containing amplitude values.
@@ -77,7 +69,7 @@ def peak_db(
         axis: int = -1,
         eps: float = get_default_eps()
 ) -> np.ndarray:
-    """ Returns the peak amplitude of a `np.ndarray` in decibel scale.
+    """Returns the peak amplitude of a `np.ndarray` in decibel scale.
     
     Args:
         x (np.ndarray): Input audio data.
@@ -149,7 +141,7 @@ def is_clipped(x: np.ndarray, min: float = -1.0, max: float = 1.0) -> bool:
 
 
 def is_anomalous(x: np.ndarray) -> bool:
-    """ Retruns `True`if a `np.ndarray` containing audio data has `inf`, `-inf`
+    """Retruns `True`if a `np.ndarray` containing audio data has `inf`, `-inf`
     or `NaN` values.
     
     Args:
@@ -169,10 +161,10 @@ def is_anomalous(x: np.ndarray) -> bool:
 def is_silent(
         x: np.ndarray,
         thresh_db: float = -80.0,
-        frame_size: Optional[int] = None,
+        frame_size: int | None = None,
         hop_size: float = 0.5,
         axis: int = -1,
-        mode: Optional[str] = "any"
+        mode: str | None = "any"
 ) -> bool:
     """Returns `True` if a `np.ndarray` containing audio data is silent. That
     is, the root mean square level of the files in decibels is below a certain
@@ -182,7 +174,7 @@ def is_silent(
         x (np.ndarray): Input audio data.
         thresh_db (float): Minimum threshold below which a file is considered
             silent.
-        frame_size (Optional[int]): If given, the root mean square level is
+        frame_size (int | None): If given, the root mean square level is
             computed per frame.
         axis (int): Axis along which the root mean square level in decibels is
             computed and contrasted again the given threshold in decibels.
@@ -237,7 +229,7 @@ def spectral_rolloff(
         x: np.ndarray,
         fs: int,
         fft_size: int,
-        hop_size: Optional[int],
+        hop_size: int | None,
         window: str = "hann",
         rolloff: float = 0.9
 ) -> np.ndarray:
@@ -249,7 +241,7 @@ def spectral_rolloff(
         x (np.ndarray): Input audio data.
         fs (int): Sample rate.
         fft_size (int): Size of the FFT.
-        hop_size (Optional[int]): Hop size of the FFT.
+        hop_size (int | None): Hop size of the FFT.
         window (str): Window type.
         rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
             0.9 means that the resulting rolloff for a given frequency is

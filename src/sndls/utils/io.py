@@ -5,9 +5,7 @@ from glob import glob
 from typing import (
     Callable,
     List,
-    Optional,
-    Tuple,
-    Union
+    Tuple
 )
 from .config import get_default_audio_io_dtype
 from .exceptions import FolderNotFoundError
@@ -21,24 +19,23 @@ from .fmt import (
 
 
 def get_dir_files(
-        dir: Union[str, List[str]],
-        ext: Union[str, List[str]] = ".wav",
+        dir: str | List[str],
+        ext: str | List[str] = ".wav",
         recursive: bool = True,
-        key: Optional[Callable] = None,
+        key: Callable | None = None,
 ) -> List[str]:
     """Returns a `list` with all the files inside folder with extension `ext`.
     It supports a recursive search and searching in more than one root folder
-    at a time if `recursive=True` and `dir` is a `list` of `str`,
-    respectively.
+    at a time if `recursive=True` and `dir` is a `list` of `str`, respectively.
 
     Args:
-        dir (Union[str, List[str]]): Folder(s) to be searched.
-        ext (Union[str, Tuple[str]]): File extensions to be considered. Accepts
-            `.*` as a wild card.
+        dir (str | List[str]): Folder(s) to be searched.
+        ext (str | Tuple[str]): File extensions to be considered. Accepts `.*`
+            as a wild card.
         recursive (bool): If `True`, the search inside each folder will be
             recursive.
-        key (Optional[Callable]): Key function to sort the results. If it is
-            not provided, files will be sorted alphabetically.
+        key (Callable | None): Key function to sort the results. If it is not
+            provided, files will be sorted alphabetically.
 
     Returns:
         `list` of `str` with the path to each retrieved file.
@@ -107,8 +104,8 @@ def read_audio_metadata(file: str) -> dict:
 def read_audio(
         file: str,
         start: int = 0,
-        frames: Optional[int] = -1,
-        stop: Optional[int] = None,
+        frames: int | None = -1,
+        stop: int | None = None,
         dtype: str = get_default_audio_io_dtype(),
 ) -> Tuple[np.ndarray, int]:
     """Reads an audio file or audio file chunk and returns it as a 
@@ -117,8 +114,8 @@ def read_audio(
     Args:
         file (str): Audio file.
         start (int): Start frame for reading partial frames of the file.
-        frames Optional[int]: Number of frames to read.
-        stop (Optional[int]): End frame index for reading partial frames of the
+        frames (int | None): Number of frames to read.
+        stop (int | None): End frame index for reading partial frames of the
             file.
         dtype (str): Data type used to represent the data.
     
@@ -146,7 +143,7 @@ def ask_confirmation(
                      "</magenta> ",
             exit_s: str = "Program finished by the user",
             exit: bool = True
-    ) -> Optional[bool]:
+    ) -> bool | None:
         """Request user input to confirm or reject an instruction.
 
         Args:
@@ -155,7 +152,7 @@ def ask_confirmation(
                 the program execution is terminated.
 
         Returns:
-            Optional[bool]: User response.
+            bool | None: User response.
         """
         user_input = None
 

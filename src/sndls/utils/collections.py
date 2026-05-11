@@ -34,7 +34,7 @@ def flatten_nested_list(nl: List[List]) -> List[Any]:
 
 
 def time_to_str(time: float, abbrev: bool = False) -> str:
-    """ Returns a time in seconds in a human readable format.
+    """Returns a time in seconds in a human readable format.
     
     Args:
         time (float): Time in seconds.
