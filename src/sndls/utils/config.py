@@ -59,6 +59,7 @@ class __Config__(metaclass=__Singleton__):
             "</u>": self._TEXT_DECORATORS["end_decoration"]
         }
 
+        self._DATETIME_FMT = "%Y-%m-%d %H:%M:%S"
         self._DEFAULT_AUDIO_IO_DTYPE = "float32"
         self._DEFAULT_AUDIO_SUBTYPE = "FLOAT"
         self._SINGLE_PROCESS_PROGRESS_BAR_COLOR = "green"
@@ -130,10 +131,10 @@ def get_default_eps() -> float:
     return np.finfo(get_default_audio_io_dtype()).eps
 
 
-def get_allowed_audio_file_extensions() -> Tuple[str]:
+def get_allowed_audio_file_extensions() -> Tuple[str, ...]:
     """Returns the allowed audio file extensions.
     
     Returns:
-        Tuple(str): Allowed audio file extensions.
+        Tuple[str, ...]: Allowed audio file extensions.
     """
     return __Config__()._ALLOWED_AUDIO_FILE_EXTENSIONS

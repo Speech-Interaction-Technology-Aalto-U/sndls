@@ -1,6 +1,9 @@
 import sys
 from tqdm import tqdm
-from typing import Optional
+from typing import (
+    NoReturn,
+    Optional
+)
 from .config import (
     _get_text_color_tags,
     _get_text_decorator_tags
@@ -43,7 +46,7 @@ def printc_exit(
         s: str,
         code: int = 0,
         writer: Optional[tqdm] = None
-) -> None:
+) -> NoReturn:
     """Prints a formatted string and exits the program with a specified exit
     code.
 
@@ -76,7 +79,11 @@ def print_warning(s: str, writer: Optional[tqdm] = None) -> None:
     printc(f"<warning>{s}</warning>", writer=writer)
 
 
-def exit_error(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
+def exit_error(
+        s: str,
+        code: int = 1,
+        writer: Optional[tqdm] = None
+) -> NoReturn:
     """Prints an error and stops the execution of the program.
     
     Args:
@@ -88,7 +95,11 @@ def exit_error(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
     sys.exit(code)
 
 
-def exit_warning(s: str, code: int = 1, writer: Optional[tqdm] = None) -> None:
+def exit_warning(
+        s: str,
+        code: int = 1,
+        writer: Optional[tqdm] = None
+) -> NoReturn:
     """Prints a warning and stops the execution of the program.
 
     Args:
@@ -109,16 +120,16 @@ def bytes_to_str(bytes: int) -> str:
     Returns:
         (str): `str` representation of `bytes`.
     """
-    if bytes / (1024 ** 4) > 1.0:
+    if bytes / (1024 ** 4) >= 1.0:
         repr = f"{bytes / 1024 ** 4:.1f}T"
 
-    elif bytes / (1024 ** 3) > 1.0:
+    elif bytes / (1024 ** 3) >= 1.0:
         repr = f"{bytes / 1024 ** 3:.1f}G"
         
-    elif bytes / (1024 ** 2) > 1.0:
+    elif bytes / (1024 ** 2) >= 1.0:
         repr = f"{bytes / 1024 ** 2:.1f}M"
         
-    elif bytes / 1024 > 1.0:
+    elif bytes / 1024 >= 1.0:
         repr = f"{bytes / 1024:.1f}K"
         
     else:

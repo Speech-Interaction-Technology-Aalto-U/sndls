@@ -1,7 +1,10 @@
 import os
 import numpy as np
 import soundfile as sf
-from glob import glob
+from glob import (
+    escape,
+    glob
+)
 from typing import (
     Callable,
     List,
@@ -15,6 +18,7 @@ from .guards import is_file_or_error
 from .collections import make_list
 from .fmt import (
     _decorate_str,
+    exit_error,
     exit_warning,
     print_error
 )
@@ -33,8 +37,8 @@ def get_dir_files(
 
     Args:
         dir (Union[str, List[str]]): Folder(s) to be searched.
-        ext (Union[str, Tuple[str]]): File extensions to be considered. Accepts
-            `.*` as a wild card.
+        ext (Union[str, List[str]]): File extensions to be considered. Accepts
+            `.*` as a wild card. Extensions are matched case-insensitively.
         recursive (bool): If `True`, the search inside each folder will be
             recursive.
         key (Optional[Callable]): Key function to sort the results. If it is
@@ -44,7 +48,7 @@ def get_dir_files(
         `list` of `str` with the path to each retrieved file.
 
     Raises:
-        FileNotFoundError: If one of the folder(s) cannot be found.
+        FolderNotFoundError: If one of the folder(s) cannot be found.
     """
     dir = make_list(dir)
     ext = make_list(ext)
@@ -57,29 +61,31 @@ def get_dir_files(
     all_files = []
 
     # Search dirs
+    # NOTE: Folder names are escaped to support names containing glob special
+    # characters (e.g. '[' or ']') and extensions are compared in lowercase to
+    # support upper case extensions (e.g. '.WAV')
+    any_ext = ".*" in ext
+    ext = [e.lower() for e in ext]
+
     for dir_ in dir:
-        for ext_ in ext:
-            if recursive:
-                all_files.extend(
-                    list(
-                        glob(os.path.join(dir_, "**", f"*{ext_}"),
-                             recursive=True)
-                    )
-                )
-            else:
-                all_files.extend(list(glob(os.path.join(dir_, f"*{ext_}"))))
+        if recursive:
+            dir_files = glob(
+                os.path.join(escape(dir_), "**", "*"),
+                recursive=True
+            )
+        
+        else:
+            dir_files = glob(os.path.join(escape(dir_), "*"))
+        
+        all_files.extend(
+            file for file in dir_files
+            if any_ext or os.path.splitext(file)[1].lower() in ext
+        )
     
-    # Filter out f olders with file-like names (e.g. ending in .wav extension)
-    flagged_files = []
+    # Filter out folders with file-like names (e.g. ending in .wav extension)
+    all_files = [file for file in all_files if os.path.isfile(file)]
 
-    for file in all_files:
-        if not os.path.isfile(file):
-            flagged_files.append(file)
-    
-    for flagged_file in flagged_files:
-        all_files.remove(flagged_file)
-
-    return sorted(all_files, key=key)
+    return sorted(set(all_files), key=key)
 
 
 def read_audio_metadata(file: str) -> dict:
@@ -124,7 +130,7 @@ def read_audio(
     
     Returns:
         (Tuple[np.ndarray, int]): `np.ndarray` representing the audio data and
-            and sample rate `tuple`.
+            sample rate `tuple`.
     """
     is_file_or_error(file)
 
@@ -146,16 +152,18 @@ def ask_confirmation(
                      "</magenta> ",
             exit_s: str = "Program finished by the user",
             exit: bool = True
-    ) -> Optional[bool]:
+    ) -> bool:
         """Request user input to confirm or reject an instruction.
 
         Args:
             s (str): Message to be printed to ask user confirmation.
+            exit_s (str): Message to be printed if the program execution is
+                terminated.
             exit (bool): If `True` and user answer is `n` (no), then
                 the program execution is terminated.
 
         Returns:
-            Optional[bool]: User response.
+            bool: User response.
         """
         user_input = None
 
@@ -163,7 +171,14 @@ def ask_confirmation(
             if user_input is not None:
                 print_error(f"Invalid input '{user_input}'")
 
-            user_input = input(_decorate_str(s))
+            try:
+                user_input = input(_decorate_str(s))
+            
+            except EOFError:
+                exit_error(
+                    "No user input available. Use --unattended or -u to skip "
+                    "user confirmation"
+                )
 
             if str(user_input) == "y":
                 response = True

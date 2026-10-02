@@ -8,7 +8,7 @@ from .collections import make_list
 
 
 def is_file_or_error(file: str) -> None:
-    """Raises and exception if `file` is not a file.
+    """Raises an exception if `file` is not a file.
 
     Args:
         file (str): File path to check.
@@ -31,10 +31,13 @@ def has_ext(file: str, ext: Union[str, List[str]]) -> bool:
     Returns:
         bool: `True` if `file` has one of the specified extensions, `False`
             otherwise.
+    
+    !!! note
+        Extensions are compared case-insensitively.
     """
-    ext = make_list(ext)
+    ext = [e.lower() for e in make_list(ext)]
     _, ext_ = os.path.splitext(file)
-    return ext_ in ext
+    return ext_.lower() in ext
 
 
 def has_ext_or_error(file: str, ext: Union[str, List[str]]) -> None:
@@ -51,7 +54,7 @@ def has_ext_or_error(file: str, ext: Union[str, List[str]]) -> None:
             extensions.
     """
     if not has_ext(file, ext=ext):
-        ext_repr = ", ".join([f"'{e}'" for e in ext])
+        ext_repr = ", ".join([f"'{e}'" for e in make_list(ext)])
 
         raise FileExtensionError(
             f"Invalid file extension of '{file}'. Expected file extensions: "
@@ -75,14 +78,19 @@ def is_file_with_ext(file: str, ext: Union[str, List[str]]) -> bool:
     return os.path.isfile(file) and has_ext(file, ext)
 
 
-def is_file_with_ext_or_error(file: str, ext: Union[str, List[str]]) -> bool:
-    """Raises an exception if `file` does not exists or does not have one of
+def is_file_with_ext_or_error(file: str, ext: Union[str, List[str]]) -> None:
+    """Raises an exception if `file` does not exist or does not have one of
     the specified extensions.
     
     Args:
         file (str): File to check.
         ext (Union[str, List[str]]): Single extension to check as `str` or
             `list` of extensions to check.
+    
+    Raises:
+        FileNotFoundError: If `file` is not a valid file.
+        FileExtensionError: If `file` does not have any of the specified
+            extensions.
     """
     is_file_or_error(file)
     has_ext_or_error(file, ext=ext)
