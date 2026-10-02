@@ -1,6 +1,7 @@
 import sys
 import argparse
 from .cmd import sndls
+from ..utils.config import get_allowed_audio_file_extensions
 from ..utils.fmt import (
     printc_exit as print_exit,
     exit_warning
@@ -11,7 +12,7 @@ from sndls import (
 )
 
 
-def get_parser() -> argparse.Namespace:
+def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -25,10 +26,10 @@ def get_parser() -> argparse.Namespace:
         help="input audio file, .csv file or folder containing audio files"
     )
     parser.add_argument(
-    "-e", "--extension",
+        "-e", "--extension",
         type=str,
         nargs="+",
-        default=[".wav"],
+        default=list(get_allowed_audio_file_extensions()),
         help="audio file extension(s)"
     )
     parser.add_argument(
@@ -79,8 +80,8 @@ def get_parser() -> argparse.Namespace:
         type=float,
         help=(
             "number of files to randomly sample from all input files. If the "
-             "value is between 0.0 and 1.0, it will be interpreted as a "
-             "percentage"
+            "value is between 0.0 and 1.0, it will be interpreted as a "
+            "percentage"
         )
     )
     parser.add_argument(
@@ -148,7 +149,7 @@ def get_parser() -> argparse.Namespace:
     parser.add_argument(
         "--spectral-rolloff-detail",
         action="store_true",
-        help="shows spectral rollof in min ≤ mean ≤ max format"
+        help="shows spectral rolloff in min ≤ mean ≤ max format"
     )
     parser.add_argument(
         "-p", "--post-action",
@@ -163,7 +164,7 @@ def get_parser() -> argparse.Namespace:
         type=str,
         help=(
             "post action output (required for --post-action "
-            "{cp,mv,cp+sp,mv+sp, dump, dump+sp})"
+            "{cp,mv,cp+sp,mv+sp,dump,dump+sp})"
         )
     )
     parser.add_argument(
@@ -184,7 +185,8 @@ def get_parser() -> argparse.Namespace:
         "--post-action-split-dirname",
         type=str,
         default="split_",
-        help="split folder name (only valid if --post-action {cp+sp,mv+sp})"
+        help="split folder name prefix (only valid if --post-action "
+             "{cp+sp,mv+sp})"
     )
     parser.add_argument(
         "--max-fname-chars",
@@ -207,7 +209,7 @@ def get_parser() -> argparse.Namespace:
         "--max-duration",
         type=float,
         default=60 * 60 * 3,
-        help="skip reading audio files larger than this duration in seconds"
+        help="skip reading audio files longer than this duration in seconds"
     )
     parser.add_argument(
         "--skip-invalid-files",

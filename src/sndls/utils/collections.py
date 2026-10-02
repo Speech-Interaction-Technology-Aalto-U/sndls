@@ -1,27 +1,29 @@
 from itertools import chain
 from typing import (
     Any,
-    List
+    List,
+    Optional
 )
 
 
-def make_list(x: Any) -> List[Any]:
+def make_list(x: Any) -> Optional[List[Any]]:
     """If `x` is a single element, turns it into a `list` of one element.
 
     Args:
         x (Any): Element(s) to be returned as a `list`.
 
     Returns:
-        (list): `x` as a `list`.
+        (Optional[list]): `x` as a `list`, or `None` if `x` is `None`.
     """
     return [x] if not isinstance(x, list) and x is not None else x
 
 
-def flatten_nested_list(nl: List[List]) -> List[Any]:
+def flatten_nested_list(nl: Any) -> List[Any]:
     """Flattens a list of lists of arbitrary depth.
 
     Args:
-        nl (List[List]): Nested `list` of arbitrary depth.
+        nl (Any): Nested `list` of arbitrary depth. If `nl` is not a `list`,
+            it is returned as a `list` of one element.
 
     Return:
         (list): Flattened `list`.
@@ -34,7 +36,7 @@ def flatten_nested_list(nl: List[List]) -> List[Any]:
 
 
 def time_to_str(time: float, abbrev: bool = False) -> str:
-    """Returns a time in seconds in a human readable format.
+    """ Returns a time in seconds in a human readable format.
     
     Args:
         time (float): Time in seconds.
@@ -89,16 +91,16 @@ def bytes_to_str(bytes: int) -> str:
     Returns:
         (str): `str` representation of `bytes`.
     """
-    if bytes / (1024 ** 4) > 1.0:
+    if bytes / (1024 ** 4) >= 1.0:
         repr = f"{bytes / 1024 ** 4:.1f}T"
 
-    elif bytes / (1024 ** 3) > 1.0:
+    elif bytes / (1024 ** 3) >= 1.0:
         repr = f"{bytes / 1024 ** 3:.1f}G"
         
-    elif bytes / (1024 ** 2) > 1.0:
+    elif bytes / (1024 ** 2) >= 1.0:
         repr = f"{bytes / 1024 ** 2:.1f}M"
         
-    elif bytes / 1024 > 1.0:
+    elif bytes / 1024 >= 1.0:
         repr = f"{bytes / 1024:.1f}K"
         
     else:

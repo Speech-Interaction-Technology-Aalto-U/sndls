@@ -44,11 +44,11 @@ sndls --version
 ```
 This should output:
 ```
-sndls version x.y.z yyyy-zzzz developed by Esteban Gómez
+sndls version x.y.z yyyy-zzzz developed by Esteban Gómez (Speech Interaction Technology, Aalto University)
 ```
 Where:
 - `x.y.z` represents the major, minor, and patch version
-- `yyyy-zzzz` indicates the development start year and the current 
+- `yyyy-zzzz` indicates the development start year and the current year
 
 ## Install in developer mode
 Developer mode installation is intended for those developing new features for the tool. To set it up:
@@ -73,7 +73,7 @@ python -m pip install flit
 For more information on `flit`, refer to the [Flit Command Line Interface documentation](https://flit.pypa.io/en/stable/).
 
 ## Install through `uv`
-Alternatively, you can install the tool using `uv`. This is adequate for when you can to keep it isolated from your `python`
+Alternatively, you can install the tool using `uv`. This is adequate for when you want to keep it isolated from your `python`
 environment setup and just run it to analyze a certain data collection.
 
 1. Install `uv` and `uvx` following the instructions for your operating system in [`uv` website](https://docs.astral.sh/uv/getting-started/installation/).
@@ -81,7 +81,7 @@ environment setup and just run it to analyze a certain data collection.
 ```bash
 uv tool install sndls
 ```
-3. Verify the installation with
+3. Verify the installation with:
 ```bash
 uv tool run sndls --version
 ```
@@ -91,11 +91,11 @@ uvx sndls --version
 ```
 This should output:
 ```
-sndls version x.y.z yyyy-zzzz developed by Esteban Gómez
+sndls version x.y.z yyyy-zzzz developed by Esteban Gómez (Speech Interaction Technology, Aalto University)
 ```
 Where:
 - `x.y.z` represents the major, minor, and patch version
-- `yyyy-zzzz` indicates the development start year and the current
+- `yyyy-zzzz` indicates the development start year and the current year
 
 # Tutorial
 This quick tutorial is structured into multiple sections, each focusing on a
@@ -131,7 +131,7 @@ Maximum duration:     4.0 second(s)
 Average duration:     3.6 second(s)
 Total size:           460.0K
 
-Elapsed time: 5.0 ms
+Elapsed time: 5.0 millisecond(s)
 ```
 
 ## Help
@@ -178,9 +178,10 @@ If `--sha256-short` is used instead, you should see:
 ## Fast metadata search
 Inspecting large folders or those containing long audio files can take considerable time.
 In some cases, it's preferable to extract only metadata without reading the actual audio samples.
-For such cases, the `--meta`  or `-m` option is available. In this case, only metadata
+For such cases, the `--meta` or `-m` option is available. In this case, only metadata
 based information will be printed to the terminal. Information such as `peak_db`, `rms_db` will
-not be calculated.
+not be calculated. Because of this, `--meta` cannot be combined with `--sha256`, `--sha256-short`, `--csv`,
+`--filter`, `--select` or `--spectral-rolloff`.
 ```bash
 sndls /path/to/audio/dir --meta
 ```
@@ -198,13 +199,14 @@ Please note that the `.csv` file will include the full file path and full SHA-25
 or `--sha256-short` is enabled). The results included in the `.csv` will be the exact results that match your search.
 
 ## Filtering by extension
-Listed files can be filtered by many ways, including their extension. Only certain audio file extensions
-that can be parsed by `soundfile` are currently supported. Use the `--extension` or `-e` option if you want
+Listed files can be filtered in many ways, including their extension. Only certain audio file extensions
+that can be parsed by `soundfile` are currently supported, and all of them are included by default. Use the `--extension` or `-e` option if you want
 to restrict your results to a certain extension or extensions:
 ```bash
 sndls /path/to/audio/dir --extension .wav .flac
 ```
 In this case, the search will include only `.wav` and `.flac` files, ignoring all other extensions.
+Extensions are matched case-insensitively, so files such as `audio.WAV` are also included when using `.wav`.
 
 ## Filtering by `python` expressions
 In addition to filtering by extension using the `--extension` or `-e` option, you can create custom
@@ -214,7 +216,7 @@ filters to find files with specific traits. This can be useful for tasks like:
 - Finding files within a specific duration range
 - Finding files with a particular sample rate
 
-For these cases, the `--select` or `-s`) option allows you to select files that meet certain criteria, while
+For these cases, the `--select` (or `-s`) option allows you to select files that meet certain criteria, while
 the `--filter` or `-f` option lets you select all files except those that match the filter. Both options
 accept `python` expressions for greater flexibility in your search. 
 
@@ -241,28 +243,28 @@ sndls /path/to/audio/dir --select "all(db > -3.0 for db in peak_db)"
 ```
 
 Here is a list of all fields that can be used to refine your search:
-| Field                      | Description                                                                                                  | Data type     |
-|----------------------------|--------------------------------------------------------------------------------------------------------------|---------------|
-| `file`                     | Audio file path                                                                                              | `str`         |
-| `filename`                 | Audio filename                                                                                               | `str`         |
-| `fs`                       | Audio sample rate in hertz (e.g. 16000, 48000)                                                               | `int`         |
-| `num_channels`             | Number of channels in the file                                                                               | `int`         |
-| `num_samples_per_channels` | Number of samples per channels                                                                               | `int`         |
-| `duration_seconds`         | Duration of the file in seconds                                                                              | `float`       |
-| `size_bytes`               | Size of the file in bytes                                                                                    | `int`         |
-| `fmt`                      | File format (`WAV`, `RF64`, etc)                                                                             | `str`         |
-| `subtype`                  | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                                                              | `str`         |
-| `peak_db`                  | Per-channel peak value in decibels                                                                           | `List[float]` |
-| `rms_db`                   | Per-channel root mean square value in decibels                                                               | `List[float]` |
-| `spectral_rolloff`         | Average spectral-rolloff in hertz (only available with `--spectral-rolloff`)                                 | `List[float]` |
-| `spectral_rolloff_min`     | Minimum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
-| `spectral_rolloff_max`     | Maximum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`) | `List[float]` |
-| `is_silent`                | `True` if all channels have less than `--silent-thresh` dB RMS                                               | `bool`        |
-| `is_clipped`               | `True` if any channel contains values outside the `-1.0` to `1.0` range                                      | `bool`        |
-| `is_anomalous`             | `True` if any sample is `NaN`, `inf` or `-inf`                                                               | `bool`        |
-| `is_invalid`               | `True` if the file could not be read. Only valid with `--skip-invalid-files`                                 | `bool`        |
-| `sha256`                   | SHA-256 hash (only available if `--sha256` or `--sha256-short` is enabled                                    | `str`         |
-| `preload`                  | Preloaded `DataFrame` (only available with `--preload`)                                                      | `DataFrame`   |
+| Field                     | Description                                                                                                            | Data type     |
+|---------------------------|------------------------------------------------------------------------------------------------------------------------|---------------|
+| `file`                    | Audio file path                                                                                                        | `str`         |
+| `filename`                | Audio filename                                                                                                         | `str`         |
+| `fs`                      | Audio sample rate in hertz (e.g. 16000, 48000)                                                                         | `int`         |
+| `num_channels`            | Number of channels in the file                                                                                         | `int`         |
+| `num_samples_per_channel` | Number of samples per channel                                                                                          | `int`         |
+| `duration_seconds`        | Duration of the file in seconds                                                                                        | `float`       |
+| `size_bytes`              | Size of the file in bytes                                                                                              | `int`         |
+| `fmt`                     | File format (`WAV`, `RF64`, etc)                                                                                       | `str`         |
+| `subtype`                 | File subtype (`PCM_16`, `PCM_24`, `FLOAT`, etc)                                                                        | `str`         |
+| `peak_db`                 | Per-channel peak value in decibels                                                                                     | `List[float]` |
+| `rms_db`                  | Per-channel root mean square value in decibels                                                                         | `List[float]` |
+| `spectral_rolloff`        | Average spectral-rolloff in hertz (only available with `--spectral-rolloff`)                                           | `List[float]` |
+| `spectral_rolloff_min`    | Minimum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`)           | `List[float]` |
+| `spectral_rolloff_max`    | Maximum spectral-rolloff in hertz (only available with `--spectral-rolloff` and `--spectral-rolloff-detail`)           | `List[float]` |
+| `is_silent`               | `True` if all channels have less than `--silent-thresh` dB RMS (computed per frame if `--silent-frame-size-ms` is set) | `bool`        |
+| `is_clipped`              | `True` if any channel contains values outside the `-1.0` to `1.0` range (only possible in floating-point files)        | `bool`        |
+| `is_anomalous`            | `True` if any sample is `NaN`, `inf` or `-inf`                                                                         | `bool`        |
+| `is_invalid`              | `True` if the file could not be read. Only valid with `--skip-invalid-files`                                           | `bool`        |
+| `sha256`                  | SHA-256 hash (only available if `--sha256` or `--sha256-short` is enabled)                                             | `str`         |
+| `preload`                 | Preloaded `DataFrame` (only available with `--preload`)                                                                | `DataFrame`   |
 
 ## Filtering by using preloaded files
 `sndls` provides a `--preload` option to load a `.csv`, `.tsv`, or `.txt` file that can be used with the `--filter` and `--select` options. This feature allows you to expand your search and filtering capabilities, such as matching files from a specific file or finding a particular set of SHA-256 hashes, etc. To preload a file, you can do the following:
@@ -270,25 +272,25 @@ Here is a list of all fields that can be used to refine your search:
 sndls /path/to/audio/dir --preload /path/to/preload/file
 ```
 
-In all cases, your preloaded file will be interpreted as tabular data. To exclude the first row when it contains header information, use the `--preload-has-header` option. Otherwise, every row will be treated as data. All data from your preloaded file will be availabl
- under the preload variable when writing `--filter` or `--select` expressions. You can use it as a regular `DataFrame`. If there is no header
- information, the columns will be automatically numbered as `column_1`, `column_2`, etc.
+In all cases, your preloaded file will be interpreted as tabular data. To exclude the first row when it contains header information, use the `--preload-has-header` option. Otherwise, every row will be treated as data. All data from your preloaded file will be available
+under the `preload` variable when writing `--filter` or `--select` expressions. You can use it as a regular `DataFrame`. If there is no header
+information, the columns will be automatically numbered as `column_1`, `column_2`, etc.
 
- ```bash
- sndls /path/to/audio/dir --preload /path/to/preload/file --select "((preload['column_1'].str.contains(filename)) & (preload['column_2'] == 'TARGET')).any()"
- ```
+```bash
+sndls /path/to/audio/dir --preload /path/to/preload/file --select "((preload['column_1'].str.contains(filename)) & (preload['column_2'] == 'TARGET')).any()"
+```
 
- This expression will match all files whose filename is in `column_1` and `column_2` contains the value of `TARGET`. Please keep in mind that every file must be matched against your entire preload file, so using the `--preload` option for selection or filtering is expected to take longer than regular search expressions. However, it can be much more powerful in certain cases.
+This expression will match all files whose filename is in `column_1` and whose `column_2` value is `TARGET` in the same row. Please keep in mind that every file must be matched against your entire preload file, so using the `--preload` option for selection or filtering is expected to take longer than regular search expressions. However, it can be much more powerful in certain cases.
 
 ## Post-actions
-In some cases, we want not just to see files matching a certain criteria, but also perform actions on them (e.g., remove clipped files or silent files from a dataset). For such cases, the `--post-action` option exists. It has five available values: `cp`, `mv`, `rm`, `cp+sp`, and `mv+sp`, where:  
+In some cases, we want not just to see files matching a certain criteria, but also perform actions on them (e.g., remove clipped files or silent files from a dataset). For such cases, the `--post-action` option exists. It has seven available values: `cp`, `mv`, `rm`, `cp+sp`, `mv+sp`, `dump`, and `dump+sp`, where:  
 - `cp` will copy the files to `--post-action-output`.  
 - `mv` will move the files to `--post-action-output`.  
 - `rm` will delete the files (this action cannot be undone).  
-- `cp+sp` will first copy the files to `--post-action-output` and then create `--post-action-num-splits` splits of the data.  
-- `mv+sp` will first move the files to `--post-action-output` and then create `--post-action-num-splits` splits of the data.
-- `dump` will create a file with all the file paths. This can be useful for using `rsync` with `--files-from` option.
-- `dump+sp` will create `--post-action-num-splits` files, each one containing a subset of all the file paths.
+- `cp+sp` will randomly split the files into `--post-action-num-splits` partitions and copy each partition to a subfolder of `--post-action-output` (subfolder names start with `--post-action-split-dirname`).  
+- `mv+sp` will randomly split the files into `--post-action-num-splits` partitions and move each partition to a subfolder of `--post-action-output` (subfolder names start with `--post-action-split-dirname`).
+- `dump` will create a file (`--post-action-output`) with all the file paths. This can be useful for using `rsync` with `--files-from` option.
+- `dump+sp` will create `--post-action-num-splits` files, each one containing a subset of all the file paths. Files are named after `--post-action-output` with a `_<split_index>` suffix.
 
 In all cases, you will be asked to confirm the action through the command line. Here is an example:
 
@@ -318,13 +320,13 @@ This command randomly samples 20 audio files from `/path/to/audio/dir`. These fi
 ```bash
 sndls /path/to/audio/dir --sample 20 --post-action cp --post-action-output /path/to/output/dir
 ```
-This allows you to randomly sample data based on specific conditions, as it can be combined with the `--filter`, `--select`, or any other available options. To change the random seed used for selecting the files, you can do so as follows:
+This can be combined with the `--filter`, `--select`, or any other available options. Please note that sampling is applied to the input files before `--filter` or `--select` are evaluated, so fewer files than requested may be listed when these options are used together. To change the random seed used for selecting the files, you can do so as follows:
 ```bash
 sndls /path/to/audio/dir --sample 20 --post-action cp --post-action-output /path/to/output/dir --random-seed 3673
 ```
 Where 3673 can be any integer number that will be used as a random seed.
 
-Additionally, if a `float` between `0.0` and `1.0` is provided with the `--sample` option, it will be interpreted as a percentage of the total number of files.
+Additionally, if a `float` between `0.0` and `1.0` is provided with the `--sample` option, it will be interpreted as a fraction of the total number of files (e.g. `0.1` samples 10% of the files).
 
 # Cite
 If this tool contributed to your work, please consider citing it:

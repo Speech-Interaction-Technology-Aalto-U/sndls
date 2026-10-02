@@ -1,11 +1,19 @@
 import numpy as np
+from typing import (
+    Optional,
+    Union
+)
 from scipy.signal import stft
 from numpy.lib.stride_tricks import sliding_window_view
 from .config import get_default_eps
 
 
-def ms_to_samples(ms: float, fs: float, truncate: bool = False) -> int | float:
-    """Returns the amount of samples representing `ms` miliseconds.
+def ms_to_samples(
+        ms: float,
+        fs: float,
+        truncate: bool = False
+) -> Union[int, float]:
+    """ Returns the amount of samples representing ``ms`` miliseconds.
 
     Args:
         ms (float): Number of miliseconds.
@@ -32,13 +40,13 @@ def amp_to_db(x: np.ndarray, eps: float = get_default_eps()) -> np.ndarray:
     return 20.0 * np.log10(np.clip(x, a_min=eps, a_max=None))
 
 
-def db_to_amp(x: np.ndarray, min: float | None = None) -> np.ndarray:
+def db_to_amp(x: np.ndarray, min: Optional[float] = None) -> np.ndarray:
     """Transforms decibel values to amplitude values.
     
     Args:
         x (np.ndarray): Array containing decibel values.
-        min (float | None): Minimum decibel value. Values below this threshold
-            will be replaced by 0.0 to eliminate denormals.
+        min (Optional[float]): Minimum decibel value. Values below this
+            threshold will be replaced by 0.0 to eliminate denormals.
     
     Returns:
         np.ndarray: Array containing amplitude values.
@@ -69,7 +77,7 @@ def peak_db(
         axis: int = -1,
         eps: float = get_default_eps()
 ) -> np.ndarray:
-    """Returns the peak amplitude of a `np.ndarray` in decibel scale.
+    """ Returns the peak amplitude of a `np.ndarray` in decibel scale.
     
     Args:
         x (np.ndarray): Input audio data.
@@ -141,7 +149,7 @@ def is_clipped(x: np.ndarray, min: float = -1.0, max: float = 1.0) -> bool:
 
 
 def is_anomalous(x: np.ndarray) -> bool:
-    """Retruns `True`if a `np.ndarray` containing audio data has `inf`, `-inf`
+    """Returns `True` if a `np.ndarray` containing audio data has `inf`, `-inf`
     or `NaN` values.
     
     Args:
@@ -161,10 +169,10 @@ def is_anomalous(x: np.ndarray) -> bool:
 def is_silent(
         x: np.ndarray,
         thresh_db: float = -80.0,
-        frame_size: int | None = None,
+        frame_size: Optional[int] = None,
         hop_size: float = 0.5,
         axis: int = -1,
-        mode: str | None = "any"
+        mode: str = "any"
 ) -> bool:
     """Returns `True` if a `np.ndarray` containing audio data is silent. That
     is, the root mean square level of the files in decibels is below a certain
@@ -174,8 +182,10 @@ def is_silent(
         x (np.ndarray): Input audio data.
         thresh_db (float): Minimum threshold below which a file is considered
             silent.
-        frame_size (int | None): If given, the root mean square level is
+        frame_size (Optional[int]): If given, the root mean square level is
             computed per frame.
+        hop_size (float): Hop size as a fraction of `frame_size`. Only used if
+            `frame_size` is given.
         axis (int): Axis along which the root mean square level in decibels is
             computed and contrasted again the given threshold in decibels.
         mode (str): Method to flag the input as silent. One of:
@@ -192,15 +202,18 @@ def is_silent(
         bool: `True` if `x` is silent, `False` otherwise.
     """
     if frame_size is not None:
-        x = np.sum(x, axis=0)  # Monosum
+        # NOTE: Power is averaged across channels instead of summing samples
+        # to avoid out-of-phase channels canceling each other
+        x_pow = np.mean(x ** 2, axis=0)
+        frame_size = max(1, min(frame_size, x_pow.shape[axis]))
         x_frames = frame_cutter(
-            x,
-            frame_size=(
-                frame_size if x.shape[axis] > frame_size else x.shape[axis]
-            ),
-            hop_size=int(frame_size * hop_size)
+            x_pow,
+            frame_size=frame_size,
+            hop_size=max(1, int(frame_size * hop_size))
         )
-        db_rms = np.asarray(rms_db(x_frames, axis=axis))
+        db_rms = np.asarray(
+            amp_to_db(np.mean(x_frames, axis=axis, keepdims=True) ** 0.5)
+        )
 
         if mode == "any":
             return bool(np.any(db_rms < thresh_db))
@@ -229,7 +242,7 @@ def spectral_rolloff(
         x: np.ndarray,
         fs: int,
         fft_size: int,
-        hop_size: int | None,
+        hop_size: int,
         window: str = "hann",
         rolloff: float = 0.9
 ) -> np.ndarray:
@@ -241,7 +254,7 @@ def spectral_rolloff(
         x (np.ndarray): Input audio data.
         fs (int): Sample rate.
         fft_size (int): Size of the FFT.
-        hop_size (int | None): Hop size of the FFT.
+        hop_size (int): Hop size of the FFT.
         window (str): Window type.
         rolloff (float): Rolloff percent between 0.0 and 1.0. Rolloff of
             0.9 means that the resulting rolloff for a given frequency is
@@ -253,6 +266,11 @@ def spectral_rolloff(
     if rolloff < 0.0 or rolloff > 1.0:
         raise ValueError("rolloff must be between 0.0 and 1.0")
     
+    # Zero-pad inputs shorter than a single frame
+    if x.shape[-1] < fft_size:
+        pad_width = [(0, 0)] * (x.ndim - 1) + [(0, fft_size - x.shape[-1])]
+        x = np.pad(x, pad_width)
+
     # Compute magnitude
     fc, _, x_stft = stft(
         x,

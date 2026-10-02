@@ -13,7 +13,7 @@ def generate_sha256(obj: Any) -> str:
     """
     hasher = sha256()
     # NOTE: Prevents different hashes caused by different memory addresses
-    hasher.update(repr(obj))
+    hasher.update(repr(obj).encode("utf-8"))
     hash = hasher.hexdigest()
     return hash
 

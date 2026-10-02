@@ -9,7 +9,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["audio", "dataset", "dsp"]
 dynamic = ["version", "description"]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "numpy>=2.0.2",
     "polars>=1.23.0",

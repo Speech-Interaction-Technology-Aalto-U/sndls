@@ -10,7 +10,10 @@ from decimal import Decimal
 from numbers import Number
 from argparse import Namespace
 from tqdm import tqdm
-from typing import List
+from typing import (
+    List,
+    Optional
+)
 from ..utils.config import (
     get_allowed_audio_file_extensions,
     get_sppbar_color
@@ -46,32 +49,40 @@ from ..utils.audio import (
 
 def _matches_filter(
         data: dict,
-        preload: pl.DataFrame,
+        preload: Optional[pl.DataFrame],
         expr: str
 ) -> bool:
     """Matches a filter expression against a set of file specifications.
     
     Args:
         data (dict): Audio file specifications.
-        preload (pl.DataFrame): Preloaded data.
+        preload (Optional[pl.DataFrame]): Preloaded data.
         expr (str): Filter expression.
     
     Returns:
-        bool: `True` of the filter matches the contents of `data`, `False`
+        bool: `True` if the filter matches the contents of `data`, `False`
             otherwise.
     """
     try:
         # Set constrained globals and locals
+        # NOTE: preload is added after copying to avoid copying it per file
+        # and to avoid modifying data
+        expr_locals = deepcopy(data)
+
         if preload is not None:
-            data["preload"] = preload
+            expr_locals["preload"] = preload
 
-        result = eval(expr, {}, deepcopy(data))
+        result = eval(expr, {}, expr_locals)
 
-        if not isinstance(result, bool):
+        if not isinstance(result, (bool, np.bool_)):
             raise ValueError("Invalid return type")
+        
+        result = bool(result)
     
     except Exception as e:
-        fields_repr = ", ".join(k for k in data)
+        fields_repr = ", ".join(
+            [k for k in data] + (["preload"] if preload is not None else [])
+        )
 
         exit_error(
             f"Invalid --filter/--select expression '{expr}': {e}.\n"
@@ -95,8 +106,14 @@ def _preload_file(
     
     Args:
         file (str): File to be loaded in memory as a `pl.DataFrame`.
-        has_header (bool): If `True`, the first column of the preloaded file
+        has_header (bool): If `True`, the first row of the preloaded file
             is assumed to be a header and will be ignored.
+        truncate_ragged_lines (bool): If `True`, lines with more fields than
+            expected are truncated.
+        ignore_errors (bool): If `True`, rows with parsing errors are ignored.
+    
+    Returns:
+        pl.DataFrame: Preloaded data.
     """
     if not os.path.isfile(file):
         exit_error(f"--preload file '{file}' not found")
@@ -161,7 +178,7 @@ def _audio_file_meta_repr_from_dict(data: dict, max_fname_chars: int) -> str:
     num_samples_repr = str(data["num_samples_per_channel"])
 
     if len(num_samples_repr) > 10:
-        f"{Decimal(num_samples_repr):.5e}"
+        num_samples_repr = f"{Decimal(num_samples_repr):.4e}"
     
     if data["is_invalid"]:
         len_repr = "-".rjust(20)
@@ -207,6 +224,8 @@ def _audio_file_repr_from_dict(
         data (dict): Audio data.
         max_fname_chars (int): Maximum name of characters from the file path
             to be printed to the terminal.
+        abbrev_hash (bool): If `True`, only the last 8 characters of the
+            SHA-256 hash are printed.
         
     Returns:
         str: `str` representation of the audio file specifications.
@@ -214,15 +233,14 @@ def _audio_file_repr_from_dict(
     # Get filename repr
     filename_repr = (
         f"...{data['file'][-max_fname_chars:]}"
-        if len(data["file"
-                    ]) > max_fname_chars + 3 else data["file"]
+        if len(data["file"]) > max_fname_chars + 3 else data["file"]
     ).ljust(max_fname_chars + 3)
 
     # Get length repr
     num_samples_repr = str(data["num_samples_per_channel"])
 
     if len(num_samples_repr) > 10:
-        f"{Decimal(num_samples_repr):.5e}"
+        num_samples_repr = f"{Decimal(num_samples_repr):.4e}"
     
     if data["is_invalid"]:
         len_repr = "-".rjust(20)
@@ -333,14 +351,34 @@ def _create_dir_if_missing(dir: str) -> None:
     Args:
         dir (str): Folder to be created.
     """
-    if not os.path.isdir(dir):
+    if dir != "" and not os.path.isdir(dir):
         print(f"Creating post action output folder '{dir}'")
 
         try:
             os.makedirs(dir)
         
         except Exception as e:
-            exit_error(f"An unexpected error ocurred: {e}")
+            exit_error(f"An unexpected error occurred: {e}")
+
+
+def _get_relative_path(file: str, root: str) -> str:
+    """Returns the path of `file` relative to `root`, which is used to
+    preserve the subfolder structure when copying or moving files.
+
+    Args:
+        file (str): File path.
+        root (str): Input folder or file given by the user.
+
+    Returns:
+        str: Relative path of `file`.
+    """
+    if os.path.isdir(root):
+        return os.path.relpath(file, root)
+    
+    # NOTE: Inputs that are not folders (e.g. .csv files) preserve the full
+    # structure of each file path
+    file_path = os.path.splitdrive(os.path.abspath(file))[1]
+    return file_path.lstrip(os.sep)
 
 
 def _perform_post_action(files: List[str], args: Namespace) -> None:
@@ -373,9 +411,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
             try:
                 if args.recursive and args.post_action_preserve_subfolders:
                     # Get relative path
-                    dst = f.replace(args.input, "", 1)
-                    dst = dst.split(os.sep)  # Avoid double-slashes xplatform
-                    dst = os.path.join(args.post_action_output, *dst)
+                    dst = _get_relative_path(f, root=args.input)
+                    dst = os.path.join(args.post_action_output, dst)
 
                     # Create subfolders if structure does not exist yet
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -396,7 +433,7 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
             
             except Exception as e:
                 print_warning(
-                    f"An error ocurred while copying '{f}' to '{dst}': {e}",
+                    f"An error occurred while copying '{f}' to '{dst}': {e}",
                     writer=tqdm
                 )
             
@@ -426,9 +463,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
             try:
                 if args.recursive and args.post_action_preserve_subfolders:
                     # Get relative path
-                    dst = f.replace(args.input, "", 1)
-                    dst = dst.split(os.sep)  # Avoid double-slashes xplatform
-                    dst = os.path.join(args.post_action_output, *dst)
+                    dst = _get_relative_path(f, root=args.input)
+                    dst = os.path.join(args.post_action_output, dst)
 
                     # Create subfolders if structure does not exist yet
                     os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -446,7 +482,7 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
             
             except Exception as e:
                 print_warning(
-                    f"An error ocurred while moving '{f}' to '{dst}': {e}",
+                    f"An error occurred while moving '{f}' to '{dst}': {e}",
                     writer=tqdm
                 )
             
@@ -475,7 +511,7 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
             
             except Exception as e:
                 print_warning(
-                    f"An error ocurred while deleting '{f}': {e}",
+                    f"An error occurred while deleting '{f}': {e}",
                     writer=tqdm
                 )
     
@@ -528,9 +564,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
                 try:
                     if args.recursive and args.post_action_preserve_subfolders:
                         # Get relative path
-                        dst = f.replace(args.input, "", 1)
-                        dst = dst.split(os.sep)  # Avoid double-slashes
-                        dst = os.path.join(split_dir, *dst)
+                        dst = _get_relative_path(f, root=args.input)
+                        dst = os.path.join(split_dir, dst)
 
                         # Create subfolders if structure does not exist yet
                         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -551,7 +586,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
                 
                 except Exception as e:
                     print_warning(
-                        f"An error ocurred while copying '{f}' to '{dst}': {e}",
+                        f"An error occurred while copying '{f}' to "
+                        f"'{dst}': {e}",
                         writer=tqdm
                     )
 
@@ -610,9 +646,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
                 try:
                     if args.recursive and args.post_action_preserve_subfolders:
                         # Get relative path
-                        dst = f.replace(args.input, "", 1)
-                        dst = dst.split(os.sep)  # Avoid double-slashes
-                        dst = os.path.join(split_dir, *dst)
+                        dst = _get_relative_path(f, root=args.input)
+                        dst = os.path.join(split_dir, dst)
 
                         # Create subfolders if structure does not exist yet
                         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -633,7 +668,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
                 
                 except Exception as e:
                     print_warning(
-                        f"An error ocurred while moving '{f}' to '{dst}': {e}",
+                        f"An error occurred while moving '{f}' to "
+                        f"'{dst}': {e}",
                         writer=tqdm
                     )
 
@@ -651,6 +687,8 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
 
         if not args.unattended:
             ask_confirmation()
+        
+        _create_dir_if_missing(os.path.dirname(args.post_action_output))
 
         with open(args.post_action_output, "w") as f:
             f.write("\n".join(files))
@@ -678,6 +716,7 @@ def _perform_post_action(files: List[str], args: Namespace) -> None:
         if not args.unattended:
             ask_confirmation()
         
+        _create_dir_if_missing(os.path.dirname(args.post_action_output))
         splits = np.array_split(files, args.post_action_num_splits)
         zfill = len(str(len(splits)))
 
@@ -704,6 +743,8 @@ def sndls(args: Namespace) -> None:
         args (Namespace): Main namespace containing user provided input.
     """
     # Check file extensions
+    args.extension = [ext.lower() for ext in args.extension]
+
     for ext in args.extension:
         if ext not in get_allowed_audio_file_extensions():
             exit_error(
@@ -718,7 +759,7 @@ def sndls(args: Namespace) -> None:
         or args.csv
         or args.filter
         or args.select 
-        or args.spectral_rolloff
+        or args.spectral_rolloff is not None
     ):
         exit_error(
             "--meta not allowed with: --sha256, --sha256-short, --csv, "
@@ -782,7 +823,14 @@ def sndls(args: Namespace) -> None:
             leave=False,
             unit="row"
         )):
-            if not is_file_with_ext(file=file, ext=args.extension):
+            # NOTE: Empty rows are ignored
+            if file is None:
+                continue
+
+            if (
+                not isinstance(file, str)
+                or not is_file_with_ext(file=file, ext=args.extension)
+            ):
                 # NOTE: +2 because the count starts from 1 and the header
                 # row is skipped in the count
                 exit_error(
@@ -791,6 +839,8 @@ def sndls(args: Namespace) -> None:
                     "that such a file exists, has a valid --extension option, "
                     "and can be reached"
                 )
+        
+        files = [file for file in files if file is not None]
         
     elif os.path.isdir(args.input):
         # Show progress bar in case folder is too big
@@ -875,7 +925,20 @@ def sndls(args: Namespace) -> None:
             " is enabled"
         )
     
-    # Check
+    # Check splits are valid
+    if (
+        args.post_action_num_splits is not None
+        and args.post_action_num_splits < 1
+    ):
+        exit_error("--post-action-num-splits must be 1 or greater")
+
+    # Check silence detection settings
+    if (
+        args.silent_frame_size_ms is not None
+        and args.silent_frame_size_ms <= 0.0
+    ):
+        exit_error("--silent-frame-size-ms must be greater than 0.0")
+
     if args.silent_hop_size <= 0.0 or args.silent_hop_size > 1.0:
         exit_error(
             "--silent-hop-size must be greater than 0.0 and less than or equal"
@@ -884,6 +947,7 @@ def sndls(args: Namespace) -> None:
 
     # Global stats to collect
     glob_stats = {
+        "total_files": 0,
         "fs": [],
         "mono_files": 0,
         "stereo_files": 0,
@@ -919,7 +983,7 @@ def sndls(args: Namespace) -> None:
             "is_invalid"
         ]
 
-        if args.spectral_rolloff:
+        if args.spectral_rolloff is not None:
             if args.spectral_rolloff_detail:
                 for c in (
                     "spectral_rolloff_min",
@@ -935,7 +999,7 @@ def sndls(args: Namespace) -> None:
         if args.sha256 or args.sha256_short:
             cols.insert(1, "sha256")
 
-        with open(args.csv, "w") as f:
+        with open(args.csv, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(cols)
     
@@ -1028,20 +1092,6 @@ def sndls(args: Namespace) -> None:
                     audio_meta["is_silent"] = audio_is_silent
                     audio_meta["is_invalid"] = False
 
-                    if args.sha256 or args.sha256_short:
-                        audio_meta["sha256"] = generate_sha256_from_file(file)
-                
-                except Exception as _:
-                    audio_is_clipped = False
-                    audio_is_anomalous = False
-                    audio_is_silent = False
-                    audio_meta["peak_db"] = None
-                    audio_meta["rms_db"] = None
-                    audio_meta["is_clipped"] = False
-                    audio_meta["is_anomalous"] = False
-                    audio_meta["is_silent"] = False
-                    audio_meta["is_invalid"] = True
-
                     if args.spectral_rolloff is not None:
                         if args.spectral_rolloff_detail:
                             _spectral_rolloff = spectral_rolloff(
@@ -1104,6 +1154,28 @@ def sndls(args: Namespace) -> None:
                                     ).tolist()
                                 )
                             )
+
+                    if args.sha256 or args.sha256_short:
+                        audio_meta["sha256"] = generate_sha256_from_file(file)
+                
+                except Exception as _:
+                    audio_is_clipped = False
+                    audio_is_anomalous = False
+                    audio_is_silent = False
+                    audio_meta["peak_db"] = None
+                    audio_meta["rms_db"] = None
+                    audio_meta["is_clipped"] = False
+                    audio_meta["is_anomalous"] = False
+                    audio_meta["is_silent"] = False
+                    audio_meta["is_invalid"] = True
+
+                    # Remove partial results of the current file
+                    for k in (
+                        "spectral_rolloff_min",
+                        "spectral_rolloff",
+                        "spectral_rolloff_max"
+                    ):
+                        audio_meta.pop(k, None)
 
                     if args.sha256 or args.sha256_short:
                         audio_meta["sha256"] = generate_sha256_from_file(file)
@@ -1257,7 +1329,7 @@ def sndls(args: Namespace) -> None:
         
         # Write data to csv
         if args.csv:
-            with open(args.csv, "a") as f:
+            with open(args.csv, "a", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=cols)
 
                 # Remove fields not written to .csv
@@ -1266,7 +1338,12 @@ def sndls(args: Namespace) -> None:
                 writer.writerow(audio_meta)
         
         # Update global stats based on metadata
-        if isinstance(audio_meta["duration_seconds"], Number):
+        glob_stats["total_files"] += 1
+
+        if (
+            not audio_meta["is_invalid"]
+            and isinstance(audio_meta["duration_seconds"], Number)
+        ):
             # NOTE: It may not be a number in invalid files
             glob_stats["total_duration"] += audio_meta["duration_seconds"]
         
@@ -1274,15 +1351,28 @@ def sndls(args: Namespace) -> None:
         glob_stats["total_size_bytes"] += audio_meta["size_bytes"]
 
         # Update duration stats
+        # NOTE: Invalid files are excluded since their duration is unknown
         if (
-            (glob_stats["min_duration"] is None)
-            or (audio_meta["duration_seconds"] < glob_stats["min_duration"])
+            not audio_meta["is_invalid"]
+            and (
+                (glob_stats["min_duration"] is None)
+                or (
+                    audio_meta["duration_seconds"]
+                    < glob_stats["min_duration"]
+                )
+            )
         ):
             glob_stats["min_duration"] = audio_meta["duration_seconds"]
         
         if (
-            (glob_stats["max_duration"] is None)
-            or (audio_meta["duration_seconds"] > glob_stats["max_duration"])
+            not audio_meta["is_invalid"]
+            and (
+                (glob_stats["max_duration"] is None)
+                or (
+                    audio_meta["duration_seconds"]
+                    > glob_stats["max_duration"]
+                )
+            )
         ):
             glob_stats["max_duration"] = audio_meta["duration_seconds"]
         
@@ -1300,6 +1390,10 @@ def sndls(args: Namespace) -> None:
         if audio_meta["fs"] not in glob_stats["fs"]:
             glob_stats["fs"].append(audio_meta["fs"])
         
+        # Update invalid files
+        if audio_meta["is_invalid"]:
+            glob_stats["invalid_files"] += 1
+
         # Update global stats based on audio data
         if not args.meta:
             if audio_is_silent:
@@ -1311,9 +1405,6 @@ def sndls(args: Namespace) -> None:
             if audio_is_clipped:
                 glob_stats["clipped_files"] += 1
             
-            if audio_meta["is_invalid"]:
-                glob_stats["invalid_files"] += 1
-            
     # Get elapsed time
     elapsed_time = perf_counter() - start_time
 
@@ -1321,14 +1412,7 @@ def sndls(args: Namespace) -> None:
     if not args.summary:
         print("")
     
-    print(
-        "Total file(s):".ljust(22) + str(
-            glob_stats["mono_files"]
-            + glob_stats["stereo_files"]
-            + glob_stats["multichannel_files"]
-            + glob_stats["invalid_files"]
-        )
-    )
+    print("Total file(s):".ljust(22) + str(glob_stats["total_files"]))
 
     if glob_stats["invalid_files"] > 0:
         print_error(
@@ -1404,13 +1488,8 @@ def sndls(args: Namespace) -> None:
         + time_to_str(glob_stats['total_duration']),
     )
 
-    # NOTE: Total files are recalculated because some files may have been
-    # filtered from len(files)
-    total_files = (
-        glob_stats["mono_files"]
-        + glob_stats["stereo_files"]
-        + glob_stats["multichannel_files"]
-    )
+    # NOTE: Only valid files are used to compute duration stats
+    total_files = glob_stats["total_files"] - glob_stats["invalid_files"]
 
     if total_files > 1:
         print(
